@@ -1,0 +1,49 @@
+# 每个美股交易日收盘后，从 Cboe 抓期权数据、重新生成网页并发布到 GitHub Pages。
+# 23:30 UTC 周一到周五 = 北京时间周二到周六早上 7:30（GitHub 的定时任务可能晚几十分钟才开始）。
+name: 每日更新期权数据
+
+on:
+  schedule:
+    - cron: '30 23 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓 Cboe 期权数据
+        run: python3 src/fetch_cboe.py --min 700
+      - name: 生成网页
+        run: python3 src/build.py
+      - name: 准备发布文件
+        run: |
+          mkdir _site
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
