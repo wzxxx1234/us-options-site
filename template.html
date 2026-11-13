@@ -222,6 +222,15 @@ td.num,th.num{text-align:right;font-family:var(--f-mono);white-space:nowrap}td.d
 .obox div{background:var(--sunk);border-radius:10px;padding:8px 10px}
 .obox b{display:block;font-family:var(--f-mono);font-size:16px}.obox span{font-size:11.5px;color:var(--muted)}
 .d-h small{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:8px}
+.etfc{display:flex;flex-direction:column;contain-intrinsic-size:auto 420px}
+.etfc .idx-h b{font-size:20px}.etfc .idx-h .tk{font-size:17px}
+.etfc p{margin-bottom:10px}
+.eopt{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.eopt>b{display:block;font-size:13px;margin-bottom:8px}.eopt>b small{font-weight:400;color:var(--muted);margin-left:6px;font-size:11.5px}
+.estat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.estat div{background:var(--sunk);border-radius:10px;padding:8px 10px;min-width:0}
+.estat b{display:block;font-family:var(--f-mono);font-size:16px;white-space:nowrap}.estat span{font-size:11.5px;color:var(--muted)}
+.etfc .elinks{margin-top:auto;padding-top:12px;font-size:13px;gap:6px 16px}
 .idx-opt{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .idx-opt>b{display:block;font-size:13px;margin-bottom:6px}.idx-opt>b small{font-weight:400;color:var(--muted);margin-left:6px;font-size:11.5px}
 .idx-opt>div{padding:6px 0;border-top:1px dashed var(--line)}.idx-opt>div:first-of-type{border-top:0}
@@ -689,14 +698,18 @@ function etfHTML(){
   const row=(label,key,vals,col)=>{const b=matchETF(key);return `<div class="frow"><b>${label}</b><div class="themes"><button class="chip" data-e="${key}" data-v="" aria-pressed="${!st[key]}">全部<small>${b.length}</small></button>${vals.map(v=>{const n=b.filter(e=>e[col]===v).length;return `<button class="chip${!n&&st[key]!==v?' zero':''}" data-e="${key}" data-v="${esc(v)}" aria-pressed="${st[key]===v}">${esc(v)}<small>${n}</small></button>`}).join('')}</div></div>`};
   const grow=(label,key,list)=>{const b=matchETF(key);return `<div class="frow"><b>${label}</b><div class="themes"><button class="chip" data-e="${key}" data-v="" aria-pressed="${!st[key]}">全部<small>${b.length}</small></button>${list.map(([k,l,f])=>{const n=b.filter(f).length;return `<button class="chip${!n&&st[key]!==k?' zero':''}" data-e="${key}" data-v="${k}" aria-pressed="${st[key]===k}">${l}<small>${n}</small></button>`}).join('')}</div></div>`};
   let list=matchETF();const act=st.ecat||st.eiss||st.edir||EG.some(g=>st[g[0]])||st.q;
-  const erow=e=>`<div class="etf"><span class="tk">${hl(e[0])}</span><span>${hl(e[1])}${e[7]?`<span class="lev">${e[7]}</span>`:''}${e[8]?`<span class="tg" style="margin-left:6px">期权${e[8]}</span>`:''}<span class="iss">${e[5]}</span><span class="elinks">${chainLinks(e[0],1)}</span></span><span class="track">${hl(e[3]||e[2])}</span><span class="d">${e[4]?hl(e[4]):''}${ostat(e[0])}</span></div>`;
+  const erow=e=>{const o=O[e[0]],sp=o&&nz(o[13])?o[13]:null;
+    return `<article class="idx etfc"><div class="idx-h"><b>${hl(e[3]||e[1])}</b><span class="tk">${hl(e[0])}</span></div><div class="idx-en">${hl(e[1])}</div>${e[4]?`<p>${hl(e[4])}</p>`:''}
+    <dl><dt>类别</dt><dd>${esc(e[2])}</dd><dt>发行方</dt><dd>${esc(e[5])}</dd>${o?`<dt>现价</dt><dd>$${o[5]}　<span class="${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</span></dd><dt>到期日</dt><dd>${o[12]>=5?'每个交易日都有到期':o[12]?`7 天内有 ${o[12]} 个到期日`:'7 天内没有到期日'}</dd>`:''}</dl>
+    ${o?`<div class="eopt"><b>期权<small>Cboe · ${ODATE}${o[14]?` · 这只的数据停在 ${o[14].slice(5)}`:''}</small></b><div class="estat"><div><b>${o[9]?'第 '+o[9]:'—'}</b><span>成交排名</span></div><div><b>${fmtN(o[0])}</b><span>成交（张）</span></div><div><b>${fmtN(o[11])}</b><span>未平仓（张）</span></div><div><b>${o[10]?o[10].toFixed(1)+'%':'—'}</b><span>IV30</span></div><div><b>${nz(o[3])?o[3].toFixed(2):'—'}</b><span>Put/Call</span></div><div><b class="${sp==null?'':sp>10?'hi':sp<=2?'lo':''}">${sp==null?'—':sp+'%'}</b><span>平值价差</span></div></div></div>`:'<p class="d-sm">这天没有抓到它的期权数据。</p>'}
+    <div class="elinks">${chainLinks(e[0],1)}</div></article>`};
   const flat=st.esort!=='d';
   if(flat){const k=OSORT[st.esort],g=e=>{const o=O[e[0]];return o&&nz(o[k])?(k===13?-o[k]:o[k]):-1e9};list=list.slice().sort((a,b)=>g(b)-g(a))}
   const nO=E.filter(e=>O[e[0]]).length;
   return `<div class="frows"><div class="frow ohead"><b>期权</b><span>Cboe 延时数据 · ${ODATE}：网站上 ${E.length} 只 ETF 里 ${nO} 只抓到了期权链，可以按成交量、IV30、买卖价差、到期日来筛。</span></div>${EG.map(([k,n,l])=>grow(n,k,l)).join('')}${row('类别','ecat',cats,2)}${row('发行方','eiss',iss,5)}</div>
   <div class="res-head"><p class="count">共 <b>${list.length}</b> 只 ETF</p><div class="res-tools">${act?'<button class="clear-all" id="etf-clear">清除全部条件</button>':''}<label for="esort" hidden>排序</label><select class="sort" id="esort">${[['d','按类别分组'],['v','期权成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低']].map(([v,l])=>`<option value="${v}"${st.esort===v?' selected':''}>${l}</option>`).join('')}</select></div></div>`+
-  (list.length?flat?`<div class="etf-list">${list.slice(0,st.eshown).map(erow).join('')}</div>${list.length>st.eshown?`<button class="more" id="emore">再显示 100 只（还有 ${list.length-st.eshown} 只）</button>`:''}`:cats.map(c=>{let r=list.filter(e=>e[2]===c);if(!r.length)return'';const n=r.length;r=r.slice().sort((a,b)=>(O[b[0]]?O[b[0]][0]:-1)-(O[a[0]]?O[a[0]][0]:-1));
-    return `<h2>${esc(c)}<small>${n} 只</small></h2>${/波动率/.test(c)?'<p class="note">波动率产品持有的是 VIX 期货，要不断展期，长期持有净值会被磨损，只适合短线。</p>':''}<div class="etf-list">${r.slice(0,12).map(erow).join('')}</div>${n>12?`<button class="more" data-ecatall="${esc(c)}">看这一类全部 ${n} 只（按成交量排）</button>`:''}`}).join(''):`<div class="empty"><b>没有符合条件的 ETF</b>换个关键词，或者放宽上面的条件。<br><button id="etf-clear">清除全部条件</button></div>`)}
+  (list.length?flat?`<div class="idx-grid">${list.slice(0,st.eshown).map(erow).join('')}</div>${list.length>st.eshown?`<button class="more" id="emore">再显示 100 只（还有 ${list.length-st.eshown} 只）</button>`:''}`:cats.map(c=>{let r=list.filter(e=>e[2]===c);if(!r.length)return'';const n=r.length;r=r.slice().sort((a,b)=>(O[b[0]]?O[b[0]][0]:-1)-(O[a[0]]?O[a[0]][0]:-1));
+    return `<h2>${esc(c)}<small>${n} 只</small></h2>${/波动率/.test(c)?'<p class="note">波动率产品持有的是 VIX 期货，要不断展期，长期持有净值会被磨损，只适合短线。</p>':''}<div class="idx-grid">${r.slice(0,12).map(erow).join('')}</div>${n>12?`<button class="more" data-ecatall="${esc(c)}">看这一类全部 ${n} 只（按成交量排）</button>`:''}`}).join(''):`<div class="empty"><b>没有符合条件的 ETF</b>换个关键词，或者放宽上面的条件。<br><button id="etf-clear">清除全部条件</button></div>`)}
 
 /* ---- 指数 ---- */
 const tlinks=s=>esc(s).replace(/\b[A-Z]{2,5}\b/g,t=>ETFSET.has(t)?`<button class="tlink" data-etf="${t}">${t}</button>`:t);
