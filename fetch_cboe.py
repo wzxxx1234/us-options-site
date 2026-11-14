@@ -139,7 +139,10 @@ def main():
             if n % 200 == 0: print(f'  {n}/{len(uni)}  {time.time() - t0:.0f}s', flush=True)
 
     ts = max((r['ts'] for r in res.values() if r.get('ts')), default=None)
-    day = (ts or today.isoformat())[:10]
+    # 数据日 = 大多数标的最后一笔成交的日期（美东），不是 Cboe 文件生成时间（UTC）
+    from collections import Counter
+    lasts = [r['last'][:10] for r in res.values() if r.get('last')]
+    day = Counter(lasts).most_common(1)[0][0] if lasts else (ts or today.isoformat())[:10]
     out = {'source': 'Cboe delayed quotes', 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
            'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res}
     json.dump(out, open(os.path.join(DATA, 'options_latest.json'), 'w'), separators=(',', ':'))
