@@ -42,7 +42,7 @@ jobs:
         run: |
           mkdir -p src/data
           for f in build.py fetch_cboe.py template.html; do [ -f "$f" ] && cp "$f" src/; done
-          for f in data.json etf_extra.json; do [ -f "$f" ] && cp "$f" src/data/; done
+          for f in data.json etf_extra.json mcap.json; do [ -f "$f" ] && cp "$f" src/data/; done
           ls -R src
       - name: 准备期权数据（模式：${{ env.MODE }}）
         run: |
