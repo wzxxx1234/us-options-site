@@ -43,6 +43,8 @@ jobs:
           mkdir -p src/data
           for f in build.py fetch_cboe.py template.html; do [ -f "$f" ] && cp "$f" src/; done
           for f in data.json etf_extra.json mcap.json hist.json; do [ -f "$f" ] && cp "$f" src/data/; done
+          # 仓库里还没有走势记录时，沿用网站上的那份
+          [ -f src/data/hist.json ] || curl -fsSL "$PAGES_URL/hist.json" -o src/data/hist.json || true
           ls -R src
       - name: 准备期权数据（模式：${{ env.MODE }}）
         run: |
@@ -61,7 +63,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add hist.json
           git commit -m "记录 $(date -u +%F) 期权成交和 IV30" || echo "没有变化"
-          git push || echo "推送失败，下次再记"
+          # 运行期间仓库可能有新提交，先合并再推送，最多试 3 次
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done || echo "推送失败，下次再记"
       - name: 生成网页
         run: python3 src/build.py
       - name: 准备发布文件
