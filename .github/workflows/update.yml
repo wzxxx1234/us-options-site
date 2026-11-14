@@ -1,7 +1,7 @@
 # 每个美股交易日收盘后，从 Cboe 抓期权数据、重新生成网页并发布到 GitHub Pages。
 # 21:45 UTC 周一到周五 = 北京时间周二到周六早上 5:45（美股收盘后约 45 分钟；GitHub 的定时任务常会晚几十分钟到几小时才开始）。
 # 仓库里的文件有改动时（比如上传了新模板），只用上一次的数据重新生成网页，约 30 秒。
-# 手动运行可选：full 全量抓取（约 20 分钟）/ rebuild 只重新生成网页 / quick 只抓 60 只测试。
+# 手动运行可选：full 全量抓取（约 30 分钟，含分时走势和新闻翻译）/ rebuild 只重新生成网页 / quick 只抓 60 只测试。
 name: 每日更新期权数据
 
 on:
@@ -50,9 +50,12 @@ jobs:
         run: |
           if [ "$MODE" = "rebuild" ] && curl -fsSL "$PAGES_URL/options_latest.json" -o src/data/options_latest.json; then
             echo "沿用网站上一次的数据"
+            curl -fsSL "$PAGES_URL/intraday.json" -o src/data/intraday.json || true
           elif [ "$MODE" = "quick" ]; then
-            python3 src/fetch_cboe.py --limit 60 --min 50
+            python3 src/fetch_cboe.py --limit 60 --min 50 --intraday
           else
+            # 上一次网站上的新闻已经翻译过的标题直接复用，省翻译额度
+            curl -fsSL "$PAGES_URL/options_latest.json" -o src/data/prev_news.json || true
             python3 src/fetch_cboe.py --min 700
           fi
       - name: 保存走势记录（每天一笔，存回仓库的 hist.json）
@@ -73,6 +76,7 @@ jobs:
           cp index.html _site/index.html
           cp src/data/options_latest.json _site/options_latest.json
           [ -f src/data/hist.json ] && cp src/data/hist.json _site/hist.json || true
+          [ -f src/data/intraday.json ] && cp src/data/intraday.json _site/intraday.json || true
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
