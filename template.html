@@ -103,6 +103,32 @@ h1 em{font-style:normal;color:var(--accent)}
   .d-handle{display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 8px}
   .kv2{grid-template-columns:1fr}.kv2>span{grid-row:auto}
 }
+.ctags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}.ctags .mcb,.ctags .ub,.ctags .tg{margin:0}
+.card .sec{flex-wrap:wrap;min-width:0}
+.estrip{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:4px;padding:6px 10px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-size:12.5px;border-left:3px solid var(--warn)}
+.estrip b{font-weight:700}.estrip span{color:var(--ink);opacity:.85}
+.estrip.hot{background:color-mix(in oklab,var(--loss) 14%,var(--surface));border-left-color:var(--loss);color:var(--loss)}
+.estrip.big{font-size:14px;padding:9px 12px;margin-top:10px}
+.news{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.news li,.fnews li{line-height:1.45}.news a,.fnews a{color:var(--ink);text-decoration:none;font-size:13.5px}.news a:hover,.fnews a:hover{color:var(--accent);text-decoration:underline}
+.news small,.fnews small{display:block;font-size:11.5px;color:var(--muted)}
+.focus{margin-top:18px}
+.focus-h{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}.focus-h b{font-family:var(--f-display);font-size:22px}.focus-h span{font-size:12.5px;color:var(--muted)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.fcard{position:relative;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px 12px;border-top:3px solid var(--fc)}
+.f-earn{--fc:var(--warn)}.f-cal{--fc:var(--accent)}.f-unu{--fc:var(--loss)}.f-news{--fc:var(--gain)}
+.fcard h3{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;font-size:16px}.fcard h3 i{width:8px;height:8px;border-radius:50%;background:var(--fc);align-self:center}
+.fcard h3 small{font-size:12px;font-weight:400;color:var(--muted);margin-left:auto}
+.fcard ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.fcard li{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px dashed var(--line);font-size:13px;min-width:0}.fcard li:first-child{border-top:0}
+.fnews li{display:block}
+.fd{flex:none;min-width:76px;display:flex;flex-direction:column;line-height:1.25;color:var(--muted);font-size:12px;white-space:nowrap}.fd small{font-size:11px;opacity:.85}.fd.hot{color:var(--loss);font-weight:600}
+.ftk{flex:none;font-family:var(--f-mono);font-weight:700;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;font-size:13.5px}
+.fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.fv{flex:none;font-family:var(--f-mono);font-size:12.5px;color:var(--warn)}.f-unu .fv{color:var(--loss)}
+.fk{font-weight:600}.fk.off{color:var(--loss)}.fk.ext{color:var(--warn)}.fk.live{color:var(--accent)}.fk.opex{color:var(--gain)}
+.fmore{margin-top:auto;padding-top:8px;align-self:flex-start;font-size:12.5px;color:var(--accent);background:none;border:0;cursor:pointer}
+.fe{font-size:12.5px;color:var(--muted);margin:4px 0 8px}
 .dalert{margin-top:12px;display:grid;gap:8px}
 .dalert p{margin:0;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6;border:1px solid transparent}
 .dalert p b{margin-right:8px}
@@ -506,6 +532,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
   <div class="stats" id="stats"></div>
   <p class="datastamp" id="datastamp"></p>
   <div class="dalert" id="dalert" role="status" hidden></div>
+  <section class="focus" id="focus" aria-label="今日看点"></section>
 
   <section class="mosaic-box" aria-label="市场地图：方块大小是市值，颜色是当天表现">
     <div class="mosaic-head"><strong id="tm-title">市场地图：方块越大市值越大，颜色看当天表现。点行业名放大，点方块看详情</strong>
@@ -767,9 +794,9 @@ function hl(s){s=String(s);if(!st.q)return esc(s);const i=s.toLowerCase().indexO
 const badges=f=>f?((f&1?'<span class="bd sp">标普500</span>':'')+(f&2?'<span class="bd ndx">纳指100</span>':'')+(f&4?'<span class="bd dow">道指30</span>':'')):'<span class="bd none">指数外</span>';
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></svg>';
 const starBtn=(t,cls)=>`<button class="star ${cls||''}" data-fav="${esc(t)}" aria-pressed="${favs.has(t)}" aria-label="自选 ${esc(t)}">${STAR}</button>`;
-const tags=c=>mcBadge(c)+earnBadge(c[0])+unuBadge(c[0])+(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
+const tags=c=>mcBadge(c)+unuBadge(c[0])+(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
 const sw=k=>`<i class="sw" style="--c:var(--s${k})"></i>`;
-function cardHTML(i,n){const c=C[i];return `<div class="card" role="button" tabindex="0" data-i="${i}" style="--n:${n}"><div class="card-top"><span class="tk">${hl(c[0])}</span><span class="badges">${badges(c[3])}</span>${starBtn(c[0])}</div><div class="nm">${hl(c[1])}${c[1]!==c[2]?`<span>${hl(c[2])}</span>`:''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${hl(c[5])}${tags(c)}</div>${ostat(c[0])}<p class="desc">${hl(c[6])}</p></div>`}
+function cardHTML(i,n){const c=C[i];return `<div class="card" role="button" tabindex="0" data-i="${i}" style="--n:${n}"><div class="card-top"><span class="tk">${hl(c[0])}</span><span class="badges">${badges(c[3])}</span>${starBtn(c[0])}</div><div class="nm">${hl(c[1])}${c[1]!==c[2]?`<span>${hl(c[2])}</span>`:''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${hl(c[5])}</div>${tags(c)?`<div class="ctags">${tags(c)}</div>`:''}${estrip(c[0])}${ostat(c[0])}<p class="desc">${hl(c[6])}</p></div>`}
 const rowHTML=i=>{const c=C[i];return `<tr data-i="${i}" tabindex="0"><td>${starBtn(c[0])}</td><td class="nw"><span class="tk">${hl(c[0])}</span></td><td class="nmc">${hl(c[1])}${c[1]!==c[2]?`<small>${hl(c[2])}</small>`:''}</td><td class="nw"><span class="badges" style="justify-content:flex-start">${badges(c[3])}</span></td><td class="nw"><span class="sec">${sw(c[4])}${S[c[4]]}</span></td><td>${hl(c[5])}</td><td class="num nw">${fmtCap(c[8])}</td>${ocells(c[0])}</tr>`};
 const ocells=t=>{const o=O[t];return o?`<td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td>`:'<td class="num dim">—</td>'.repeat(5)};
 const opt=(type,key,val,label,n,on)=>`<button class="opt ${type}${!n&&!on?' zero':''}" role="${type==='radio'?'radio':'checkbox'}" aria-checked="${on}" data-f="${key}" data-v="${val}"><span class="box"></span><span class="lb">${label}</span><span class="ct">${n}</span></button>`;
@@ -962,10 +989,11 @@ function openDrawer(i){const c=C[i],d=$('#drawer');if(!d.classList.contains('on'
   const th=TH.map((t,k)=>t.set.has(i)?k:-1).filter(k=>k>=0);
   d.innerHTML=`<div class="d-handle" aria-hidden="true"></div><div class="d-bar"><button class="ib" id="d-prev" aria-label="上一家"${pos>0?'':' disabled'}>‹</button><button class="ib" id="d-next" aria-label="下一家"${pos>=0&&pos<RES.length-1?'':' disabled'}>›</button><span class="sp1">${pos>=0?`${pos+1} / ${RES.length}`:''}</span>${starBtn(c[0],'ib')}<button class="ib" id="d-x" aria-label="关闭">×</button></div>
   <div class="d-body"><div class="d-tk">${esc(c[0])}<button class="copy" id="d-copy">复制代码</button></div><div class="d-nm" id="d-title">${esc(c[1])}</div>${c[1]!==c[2]?`<div class="d-en">${esc(c[2])}</div>`:''}
-  <div class="d-row">${badges(c[3])}${tags(c)}${MW.has(c[0])?'<span class="tg">周一 / 周三 / 周五到期</span>':''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${esc(c[5])}</div>
+  <div class="d-row">${badges(c[3])}${tags(c)}${MW.has(c[0])?'<span class="tg">周一 / 周三 / 周五到期</span>':''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${esc(c[5])}</div>${estrip(c[0],1)}
   <div class="d-h">靠什么赚钱</div><p class="d-desc">${esc(c[6])}</p>${c[7]?`<div class="d-note">${esc(c[7])}</div>`:''}
   ${th.length?`<div class="d-h">所属主题</div><div class="d-rel">${th.map(k=>`<button class="pill" data-theme="${k}">${TH[k].n}</button>`).join('')}</div>`:''}
   <div class="d-h">期权数据<small>Cboe · ${ODATE}</small></div>${obox(c[0])}${obox2(c[0])}<div class="d-h">最近的走势<small>每个交易日收盘后记一笔</small></div><div class="sparkbox" data-spark="${esc(c[0])}">${sparkHTML(c[0])}</div>
+  ${newsHTML(c[0])}
   <div class="d-h">看期权</div><div class="d-links">${chainLinks(c[0],0)}<a href="https://finance.yahoo.com/calendar/earnings?symbol=${encodeURIComponent(y)}" target="_blank" rel="noopener">财报日期 ↗</a></div>
   <div class="d-h">看行情</div><div class="d-links"><a href="https://finance.yahoo.com/quote/${encodeURIComponent(y)}" target="_blank" rel="noopener">Yahoo Finance ↗</a><a href="https://www.tradingview.com/symbols/${encodeURIComponent(c[0])}/" target="_blank" rel="noopener">TradingView ↗</a><a href="https://www.google.com/finance?q=${encodeURIComponent(y)}" target="_blank" rel="noopener">Google Finance ↗</a></div>
   ${etfs.length?`<div class="d-h">持有它的常见 ETF</div><div class="d-rel">${etfs.map(([t,l])=>`<button class="pill" data-etf="${t}"><b>${t}</b>${l}</button>`).join('')}</div><p class="d-sm">按指数和板块归属推断，具体权重请到发行方网站查看。</p>`:''}
@@ -1128,6 +1156,32 @@ function weekEarnHTML(){const r=C.map((c,i)=>[i,earnOf(c[0])]).filter(([i,e])=>e
   if(!r.length)return'<p class="d-sm">未来 7 天本站公司没有财报，或者财报日历这次没取到。</p>';
   return `<div class="tbl-wrap"><table class="lbt wk"><thead><tr><th>日期</th><th>代码</th><th>名称</th><th class="num">市值</th><th class="num">财报后预期波动${qk('财报后预期波动')}</th><th class="num">IV30</th><th class="num">期权成交</th></tr></thead><tbody>${r.map(([i,e])=>{const c=C[i],o=O[c[0]];
     return `<tr><td class="nw">${md(e[0])} ${wkd(e[0])}<small class="mu">${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}</small></td><td class="nw"><button class="lbtk" data-i="${i}">${c[0]}</button></td><td class="nmc">${esc(c[1])}</td><td class="num nw">${fmtCap(c[8])}</td><td class="num">${o&&o[18]?'±'+o[18][2]+'%':'—'}</td><td class="num">${o&&o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${o?fmtN(o[0]):'—'}</td></tr>`}).join('')}</tbody></table></div>`}
+/* ---- 首页“今日看点”：财报、日程、异动、新闻 ---- */
+const NEWS=DATA.N||{};
+const ago=d=>{if(!d)return'';const m=Math.round((Date.now()-Date.parse(d))/6e4);return m<60?Math.max(1,m)+' 分钟前':m<1440?Math.round(m/60)+' 小时前':Math.round(m/1440)+' 天前'};
+function estrip(t,big){const e=earnOf(t);if(!e)return'';const n=dayDiff(etToday,e[0]);if(n<0||n>14)return'';const o=O[t];
+  return `<div class="estrip${n<=3?' hot':''}${big?' big':''}"><b>财报 ${md(e[0])} ${wkd(e[0])}${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}</b><span>${n===0?'今天':n===1?'明天':n+' 天后'}</span>${o&&o[18]?`<span>财报后预期 ±${o[18][2]}%</span>`:''}</div>`}
+function newsHTML(t){const L=NEWS[t];if(!L||!L.length)return'';
+  return `<div class="d-h">相关新闻<small>雅虎财经，英文标题</small></div><ul class="news">${L.map(([ti,l,d])=>`<li><a href="${esc(l)}" target="_blank" rel="noopener">${esc(ti)}</a><small>${ago(d)}</small></li>`).join('')}</ul>`}
+function renderFocus(){const el=$('#focus');if(!el)return;
+  const er=C.map((c,i)=>[i,earnOf(c[0])]).filter(([i,e])=>e&&dayDiff(etToday,e[0])>=0&&dayDiff(etToday,e[0])<=7);
+  const erTop=er.slice().sort((a,b)=>(C[b[0]][8]||0)-(C[a[0]][8]||0)).slice(0,7).sort((a,b)=>a[1][0]<b[1][0]?-1:a[1][0]>b[1][0]?1:(a[1][1]==='pre'?0:1)-(b[1][1]==='pre'?0:1));
+  const ev=calEvents(14).slice(0,6);
+  const un=Object.entries(O).filter(([t,o])=>isUnu(o)&&o[21]&&(CI.has(t)||ETFSET.has(t)||o[8]===2)).sort((a,b)=>b[1][21][3]-a[1][21][3]).slice(0,6);
+  const mk=(NEWS._mkt||[]).slice(0,5);
+  const tkBtn=t=>CI.has(t)?`<button class="ftk" data-fi="${CI.get(t)}">${t}</button>`:`<button class="ftk" data-fetf="${t}">${t}</button>`;
+  const earnCard=`<div class="fcard f-earn"><h3><i></i>本周财报<small>未来 7 天 ${er.length} 家</small></h3>${erTop.length?`<ul>${erTop.map(([i,e])=>{const c=C[i],o=O[c[0]],n=dayDiff(etToday,e[0]);return `<li><span class="fd${n<=1?' hot':''}">${n===0?'今天':n===1?'明天':md(e[0])+' '+wkd(e[0])}<small>${e[1]==='pre'?'盘前':e[1]==='post'?'盘后':''}</small></span>${tkBtn(c[0])}<span class="fn">${esc(c[1])}</span><span class="fv">${o&&o[18]?'±'+o[18][2]+'%':''}</span></li>`}).join('')}</ul><button class="fmore" data-go="earn">看全部 ${er.length} 家 →</button>`:'<p class="fe">财报日历下一次自动更新后显示。</p>'}</div>`;
+  const calCard=`<div class="fcard f-cal"><h3><i></i>重要日程<small>未来 14 天</small></h3>${ev.length?`<ul>${ev.map(([d,k,t,c])=>{const n=dayDiff(etToday,d);return `<li><span class="fd${n<=1?' hot':''}">${n===0?'今天':n===1?'明天':md(d)+' '+wkd(d)}</span><span class="fk ${c}">${k}</span></li>`}).join('')}</ul>`:'<p class="fe">未来 14 天没有休市、议息、CPI、非农或月度到期。</p>'}<button class="fmore" data-go="cal">看完整日历 →</button></div>`;
+  const unuCard=`<div class="fcard f-unu"><h3><i></i>期权异动<small>${ODATE}</small></h3>${un.length?`<ul>${un.map(([t,o])=>{const u=o[21];return `<li>${tkBtn(t)}<span class="fn">${md(u[0])} $${u[2]} ${u[1]==='C'?'Call':'Put'}</span><span class="fv">${fmtN(u[3])} 张</span></li>`}).join('')}</ul><button class="fmore" data-go="unu">看全部异动 →</button>`:'<p class="fe">异动数据下一次自动更新后显示。</p>'}</div>`;
+  const newsCard=`<div class="fcard f-news"><h3><i></i>市场新闻<small>雅虎财经</small></h3>${mk.length?`<ul class="fnews">${mk.map(([ti,l,d])=>`<li><a href="${esc(l)}" target="_blank" rel="noopener">${esc(ti)}</a><small>${ago(d)}</small></li>`).join('')}</ul>`:'<p class="fe">新闻下一次自动更新后显示。</p>'}</div>`;
+  el.innerHTML=`<div class="focus-h"><b>今日看点</b><span>美东 ${ODATE} 收盘后的数据</span></div><div class="fgrid">${earnCard}${calCard}${unuCard}${newsCard}</div>`}
+$('#focus').addEventListener('click',e=>{const T=e.target;let b;
+  if(b=T.closest('[data-fi]')){openDrawer(+b.dataset.fi);return}
+  if(b=T.closest('[data-fetf]')){goETF(b.dataset.fetf);return}
+  if(b=T.closest('[data-go]')){const g=b.dataset.go;
+    if(g==='earn'){clearAll();st.oearn='w';st.sort='earn';setView('companies')}
+    else if(g==='unu'){st.lunu='y';st.lk='';setView('trade');setTimeout(()=>{const x=$('#sec-rank');if(x)window.scrollTo({top:x.getBoundingClientRect().top+scrollY-84,behavior:reduce?'auto':'smooth'})},250)}
+    else if(g==='cal'){setView('trade');setTimeout(()=>{const x=$('#sec-cal');if(x)window.scrollTo({top:x.getBoundingClientRect().top+scrollY-84,behavior:reduce?'auto':'smooth'})},250)}}});
 /* ---- 自动更新没成功时在首页提醒 ---- */
 function lastSessionBefore(ds){const d=new Date(ds+'T12:00:00Z');for(let k=0;k<12;k++){d.setUTCDate(d.getUTCDate()-1);const s=d.toISOString().slice(0,10),w=d.getUTCDay();if(w>0&&w<6&&!HOL[s])return s}return ds}
 function dataAlert(){const el=$('#dalert');if(!el||!OD.date)return;
@@ -1395,7 +1449,7 @@ const AUDIT=`<div class="prose">
 </div>`;
 
 for(const k of urlKeys())DEF[k]=st[k];
-layoutMap();paintLegend();dataAlert();
+layoutMap();paintLegend();dataAlert();renderFocus();
 setView(readURL(),true);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moveInd);
 </script>
