@@ -98,10 +98,37 @@ def market_caps(tickers):
         old = {}
     return {t: out.get(t) or old.get(t) for t in tickers if out.get(t) or old.get(t)}, src
 
+# ---------- 财报日期（纳斯达克网站公开的财报日历） ----------
+def earnings(days=28):
+    """未来 days 天内的财报日：{代码: [日期, 'pre'|'post'|'']}。"""
+    out, d0 = {}, datetime.date.today()
+    hdr = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+           'Accept': 'application/json'}
+    for k in range(days):
+        day = d0 + datetime.timedelta(days=k)
+        if day.weekday() >= 5: continue
+        try:
+            req = urllib.request.Request(f'https://api.nasdaq.com/api/calendar/earnings?date={day.isoformat()}', headers=hdr)
+            with urllib.request.urlopen(req, timeout=40) as r:
+                rows = (json.loads(r.read()).get('data') or {}).get('rows') or []
+        except Exception as e:
+            print('财报日历取不到', day, e, flush=True); continue
+        for row in rows:
+            t = (row.get('symbol') or '').replace('/', '.')
+            tm = row.get('time') or ''
+            if t and t not in out:
+                out[t] = [day.isoformat(), 'pre' if 'pre' in tm else 'post' if 'after' in tm else '']
+        time.sleep(0.3)
+    return out
+
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
 
-def summarize(sym, today, name):
+def third_friday(x):
+    d = datetime.date(x.year, x.month, 15)
+    return d + datetime.timedelta(days=(4 - d.weekday()) % 7)
+
+def summarize(sym, today, name, earn=None):
     j = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/options/{sym}.json'))
     d = j['data']
     root = name.replace('.', '')
@@ -117,26 +144,78 @@ def summarize(sym, today, name):
         v, oi = o.get('volume') or 0, o.get('open_interest') or 0
         if cp == 'C': cv += v; coi += oi
         else: pv += v; poi += oi
-        exps.setdefault(ymd, []).append((float(k) / 1000, cp, o.get('bid') or 0, o.get('ask') or 0))
+        exps.setdefault(ymd, []).append((float(k) / 1000, cp, o.get('bid') or 0, o.get('ask') or 0, v, oi))
+    key = lambda x: x.strftime('%y%m%d')
     dates = sorted(datetime.date(2000 + int(x[:2]), int(x[2:4]), int(x[4:])) for x in exps)
     dates = [x for x in dates if x >= today]
     near7 = [x for x in dates if (x - today).days <= 7]
-    # 流动性：到期 5 天以上最近一档、最接近现价的 Call 的买卖价差
-    spread = None
+    mid = lambda b, a: (a + b) / 2 if b > 0 and a > 0 else None
+
+    def straddle(x):
+        """到期日 x 最接近现价、Call 和 Put 都有报价的行权价：[到期日, 跨式价, 占现价 %]。"""
+        if not px: return None
+        legs = {}
+        for k, cp, b, a, v, oi in exps[key(x)]:
+            m_ = mid(b, a)
+            if m_ is not None: legs.setdefault(k, {})[cp] = m_
+        both = [k for k, z in legs.items() if 'C' in z and 'P' in z]
+        if not both: return None
+        k = min(both, key=lambda k: abs(k - px))
+        s = legs[k]['C'] + legs[k]['P']
+        return [x.isoformat(), round(s, 2), round(s / px * 100, 1)]
+
+    # 流动性：到期 5 天以上最近一档、最接近现价的 Call 的买卖价差；同一个到期日算预期波动
+    spread = em = None
     for x in dates:
         if (x - today).days < 5: continue
-        legs = [l for l in exps[x.strftime('%y%m%d')] if l[1] == 'C' and l[2] > 0 and l[3] > 0]
+        legs = [l for l in exps[key(x)] if l[1] == 'C' and l[2] > 0 and l[3] > 0]
         if px and legs:
-            k, cp, b, a = min(legs, key=lambda l: abs(l[0] - px))
+            k, cp, b, a = min(legs, key=lambda l: abs(l[0] - px))[:4]
             spread = round((a - b) / ((a + b) / 2) * 100, 1)
+        em = straddle(x)
         break
+    # 财报后第一个到期日的预期波动（盘后公布的要再往后一天）
+    eem = None
+    if earn:
+        ed = datetime.date.fromisoformat(earn[0]) + datetime.timedelta(days=1 if earn[1] == 'post' else 0)
+        after = [x for x in dates if x >= ed]
+        if after: eem = straddle(after[0])
+    # 关键行权价：45 天内（不含当天到期）现价上方未平仓最多的 Call、下方未平仓最多的 Put
+    coik, poik = {}, {}
+    for x in dates:
+        if x <= today: continue
+        if (x - today).days > 45: break
+        for k, cp, b, a, v, oi in exps[key(x)]:
+            if cp == 'C' and k >= px: coik[k] = coik.get(k, 0) + oi
+            if cp == 'P' and k <= px: poik[k] = poik.get(k, 0) + oi
+    walls = None
+    if coik and poik:
+        ck = max(coik, key=coik.get); pk = max(poik, key=poik.get)
+        walls = [ck, int(coik[ck]), pk, int(poik[pk])]
+    # 最大痛点：最近一个月度到期日（每月第三个周五）
+    mp = None
+    # 第三个周五；遇到节假日（如耶稣受难日）提前到周四
+    monthly = [x for x in dates if x == third_friday(x) or (x.weekday() == 3 and x + datetime.timedelta(days=1) == third_friday(x) and third_friday(x) not in dates)]
+    if monthly:
+        rows = exps[key(monthly[0])]
+        ks = sorted({l[0] for l in rows})
+        if ks and sum(l[5] for l in rows) > 0:
+            pain = lambda s: sum(oi * max(0, s - k) if cp == 'C' else oi * max(0, k - s) for k, cp, b, a, v, oi in rows)
+            mp = [monthly[0].isoformat(), min(ks, key=pain)]
+    # 异动：成交量超过未平仓量、且当天成交 ≥ 500 张的合约
+    tk = key(today)  # 当天及已过期的合约不算（末日期权的成交天然大于未平仓）
+    unu = [(v, ymd, cp, k, oi) for ymd, rows in exps.items() if ymd > tk for k, cp, b, a, v, oi in rows if v >= 500 and v > oi]
+    top = None
+    if unu:
+        v, ymd, cp, k, oi = max(unu)
+        top = ['20' + ymd[:2] + '-' + ymd[2:4] + '-' + ymd[4:], cp, k, int(v), int(oi)]
     return {
         'ts': j.get('timestamp'), 'last': d.get('last_trade_time'),
         'px': round(px, 2), 'chg': round(d.get('price_change_percent') or 0, 2),
         'iv': round(d.get('iv30') or 0, 1), 'ivc': round(d.get('iv30_change') or 0, 1),
         'cv': int(cv), 'pv': int(pv), 'coi': int(coi), 'poi': int(poi),
         'n7': len(near7), 'nexp': len(dates), 'next': dates[0].isoformat() if dates else None,
-        'spr': spread,
+        'spr': spread, 'em': em, 'eem': eem, 'walls': walls, 'mp': mp, 'unu': top, 'nunu': len(unu),
     }
 
 def main():
@@ -153,9 +232,11 @@ def main():
     if limit: uni = uni[:limit]
     print(f'指数 {len(idx)}，ETF {len(etfs)}，个股 {len(stocks)}，共 {len(uni)}', flush=True)
     today = datetime.date.today()
+    earn = earnings()
+    print(f'财报日历 {len(earn)} 只', flush=True)
     res, fail = {}, []
     with ThreadPoolExecutor(4) as ex:
-        fut = {ex.submit(summarize, q, today, s): (s, k) for q, s, k in uni}
+        fut = {ex.submit(summarize, q, today, s, earn.get(s)): (s, k) for q, s, k in uni}
         for n, f in enumerate(as_completed(fut), 1):
             s, kind = fut[f]
             try:
@@ -171,7 +252,7 @@ def main():
         for s in list(fail):
             time.sleep(5)
             try:
-                r = summarize(('_' + s) if kinds[s] == 2 else s, today, s); r['k'] = kinds[s]; r['name'] = ''
+                r = summarize(('_' + s) if kinds[s] == 2 else s, today, s, earn.get(s)); r['k'] = kinds[s]; r['name'] = ''
                 res[s] = r; fail.remove(s)
             except Exception:
                 pass
@@ -185,13 +266,42 @@ def main():
     print(f'市值 {len(mcap)} 只（{mcap_src}）', flush=True)
     out = {'source': 'Cboe delayed quotes', 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
            'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res,
-           'mcap': mcap, 'mcap_source': mcap_src}
+           'mcap': mcap, 'mcap_source': mcap_src,
+           'earn': {t: v for t, v in earn.items() if t in res}}
     json.dump(out, open(os.path.join(DATA, 'options_latest.json'), 'w'), separators=(',', ':'))
     print(f'完成 {len(res)} 只，失败 {len(fail)} 只，数据时间 {ts}，用时 {time.time() - t0:.0f}s')
+    if not limit:
+        update_history(day, res)
     # --min N：成功少于 N 只就报错退出，不生成、不发布残缺的网页
     need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
     if len(res) < need:
         sys.exit(f'只抓到 {len(res)} 只，少于 {need} 只，这次不更新网页')
+
+def update_history(day, res, keep=60):
+    """每天记一笔期权成交量和 IV30，存在 data/hist.json，最多留 keep 个交易日，网页用来画走势小图。"""
+    p = os.path.join(DATA, 'hist.json')
+    try:
+        h = json.load(open(p))
+    except Exception:
+        h = {'d': [], 'v': {}, 'i': {}}
+    if day in h['d']:
+        n = h['d'].index(day)
+    else:
+        h['d'].append(day); n = len(h['d']) - 1
+        for k in ('v', 'i'):
+            for t in h[k]: h[k][t].append(None)
+    L = len(h['d'])
+    for t, r in res.items():
+        for k, val in (('v', r['cv'] + r['pv']), ('i', r['iv'] or None)):
+            arr = h[k].setdefault(t, [None] * L)
+            arr += [None] * (L - len(arr))
+            arr[n] = val
+    order = sorted(range(L), key=lambda i: h['d'][i])[-keep:]
+    h['d'] = [h['d'][i] for i in order]
+    for k in ('v', 'i'):
+        h[k] = {t: [a[i] for i in order] for t, a in h[k].items()}
+    json.dump(h, open(p, 'w'), separators=(',', ':'))
+    print(f'历史记录 {len(h["d"])} 天', flush=True)
 
 if __name__ == '__main__':
     main()
