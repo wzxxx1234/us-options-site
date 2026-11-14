@@ -38,7 +38,12 @@ _have={r[0] for r in E}
 E+=[r for r in EXTRA if r[0] not in _have]
 
 # ---------- 期权数据：Cboe 延时数据 ----------
-L=json.load(open('data/options_latest.json')); OD=L['date']; Q=L['data']
+L=json.load(open('data/options_latest.json')); Q=L['data']
+# 数据日按大多数标的最后一笔成交的日期（美东）算，不用 Cboe 文件的生成时间（UTC，收盘后会跨到第二天）
+from collections import Counter
+_lasts=[r['last'][:19] for r in Q.values() if r.get('last')]
+OD=Counter(x[:10] for x in _lasts).most_common(1)[0][0] if _lasts else L['date']
+OTS=max([x for x in _lasts if x.startswith(OD) and x[11:19]<='16:15:59'] or [L['timestamp'] or '']).replace('T',' ')  # 盘后零星成交不算
 O={}
 for t,r in Q.items():
     vol=r['cv']+r['pv']; oi=r['coi']+r['poi']
@@ -48,7 +53,7 @@ for t,r in Q.items():
     O[t]=[vol,ivr,ivp,round(r['pv']/r['cv'],2) if r['cv'] else None,round(r['pv']/vol*100,1) if vol else 0,r['px'],r['chg'],r['name'],r['k'],0,r['iv'],oi,r['n7'],r['spr'],sd if sd and sd<OD else 0,src]
 for k in (0,1,2):
     for n,t in enumerate(sorted([t for t,o in O.items() if o[8]==k and o[0]>0],key=lambda t:-O[t][0]),1): O[t][9]=n
-print('options rows',len(O),'date',OD,'ts',L['timestamp'])
+print('options rows',len(O),'date',OD,'ts',OTS)
 # ---------- 补齐全部有期权的 ETF ----------
 def cat(n):
     u=n.upper()
@@ -78,8 +83,8 @@ DROPPED=[r[0] for r in E if is_lev(r)];E=[r for r in E if not is_lev(r)]
 for t in DROPPED: O.pop(t,None)
 for n,t in enumerate(sorted([t for t,o in O.items() if o[8]==1 and o[0]>0],key=lambda t:-O[t][0]),1): O[t][9]=n
 print('dropped leveraged',len(DROPPED),' '.join(DROPPED))
-data=json.dumps({'S':SECT,'C':C,'I':I,'E':E,'O':O,'EC':EC,'OD':{'date':OD,'ts':L['timestamp'],'n':len(O)}},ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
-t=open('template.html').read().replace('/*__DATA__*/',data)
+data=json.dumps({'S':SECT,'C':C,'I':I,'E':E,'O':O,'EC':EC,'OD':{'date':OD,'ts':OTS,'n':len(O)}},ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
+t=open('template.html').read().replace('/*__DATA__*/',data).replace('（Cboe 时间戳）','（美东时间，最后一笔成交）')
 os.makedirs('dist',exist_ok=True)
 open('dist/美股选股手册.html','w').write(t)
 open('../index.html','w').write('<!doctype html>\n<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>\n</head>\n<body>\n'+t+'\n</body>\n</html>\n')
