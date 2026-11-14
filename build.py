@@ -51,6 +51,9 @@ for t,r in Q.items():
     ivr=ivp=None; src=0   # IV Rank 已按用户要求去掉，位置留空
     sd=(r.get('last') or r.get('ts') or '')[:10]
     O[t]=[vol,ivr,ivp,round(r['pv']/r['cv'],2) if r['cv'] else None,round(r['pv']/vol*100,1) if vol else 0,r['px'],r['chg'],r['name'],r['k'],0,r['iv'],oi,r['n7'],r['spr'],sd if sd and sd<OD else 0,src]
+    # 16 财报 [日期, pre/post]  17 预期波动 [到期日, 跨式价, %]  18 财报后预期波动  19 关键行权价 [Call 价, OI, Put 价, OI]
+    # 20 最大痛点 [到期日, 价]  21 最大异动合约 [到期日, C/P, 行权价, 成交, 未平仓]  22 异动合约数
+    O[t]+=[(L.get('earn') or {}).get(t) or 0,r.get('em') or 0,r.get('eem') or 0,r.get('walls') or 0,r.get('mp') or 0,r.get('unu') or 0,r.get('nunu') or 0]
 for k in (0,1,2):
     for n,t in enumerate(sorted([t for t,o in O.items() if o[8]==k and o[0]>0],key=lambda t:-O[t][0]),1): O[t][9]=n
 print('options rows',len(O),'date',OD,'ts',OTS)
