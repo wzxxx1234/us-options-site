@@ -132,6 +132,23 @@ h1 em{font-style:normal;color:var(--accent)}
 .clear-all.strong{font-weight:600;color:var(--bg);background:var(--ink);border:0;padding:5px 12px;border-radius:99px;margin-left:4px}
 .tm-note{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin:-4px 0 10px;padding:7px 12px;border-radius:9px;background:var(--accent-soft);font-size:12.5px;color:var(--ink)}
 .tm-note button{font-weight:600;color:var(--accent);background:none;border:0;cursor:pointer;font-size:13px}
+.qrow{display:flex;align-items:center;gap:12px;min-height:32px;margin:2px 0}
+.ic-w{flex:1;min-width:0;max-width:150px;height:32px;display:block}.qrow.big .ic-w{max-width:none;height:44px}.ic-mini{width:80px;height:24px;max-width:80px}
+.ic{display:block;width:100%;height:100%;overflow:visible}
+.ic .ln{fill:none;stroke-width:1.8;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.ic.up .ln{stroke:var(--gain)}.ic.dn .ln{stroke:var(--loss)}.ic.up .ar{fill:url(#icg-up)}.ic.dn .ar{fill:url(#icg-dn)}
+.ic line{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;opacity:.55;vector-effect:non-scaling-stroke}
+.qp{margin-left:auto;flex:none;display:flex;align-items:center;gap:8px;font-family:var(--f-mono)}
+.qp b{font-size:15px;font-weight:600}.qrow.big .qp b{font-size:17px}
+.qp i{font-style:normal;font-size:12.5px;font-weight:600;padding:3px 0;border-radius:6px;color:var(--bg);min-width:66px;text-align:center}
+.qp i.up{background:var(--gain)}.qp i.dn{background:var(--loss)}
+.icb{background:var(--sunk);border-radius:12px;padding:10px 12px 6px;margin-top:6px}
+.icb-h{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);min-height:20px}.icb-h b{font-family:var(--f-mono);color:var(--ink);font-weight:600}.icb-h b.up{color:var(--gain)}.icb-h b.dn{color:var(--loss)}
+.icb-read{margin-left:auto;font-family:var(--f-mono);color:var(--ink)}
+.icb-c{position:relative;height:150px;margin-top:6px;cursor:crosshair;touch-action:pan-y}
+.icb-x{position:absolute;top:0;bottom:0;width:1px;background:var(--ink);opacity:.35;pointer-events:none}
+.icb-ax{position:relative;height:18px;font-size:11px;color:var(--muted);font-family:var(--f-mono)}.icb-ax span{position:absolute;top:3px;transform:translateX(-50%)}.icb-ax span:first-child{transform:none}
+.news .en,.fnews .en{display:block;font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:1px}
 .dalert{margin-top:12px;display:grid;gap:8px}
 .dalert p{margin:0;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6;border:1px solid transparent}
 .dalert p b{margin-right:8px}
@@ -520,6 +537,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="icg-up" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--gain);stop-opacity:.32"/><stop offset="1" style="stop-color:var(--gain);stop-opacity:0"/></linearGradient><linearGradient id="icg-dn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--loss);stop-opacity:.3"/><stop offset="1" style="stop-color:var(--loss);stop-opacity:0"/></linearGradient></defs></svg>
 <header class="hero wrap">
   <div class="hero-top">
     <div>
@@ -803,7 +821,7 @@ const STAR='<svg viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1 5.
 const starBtn=(t,cls)=>`<button class="star ${cls||''}" data-fav="${esc(t)}" aria-pressed="${favs.has(t)}" aria-label="自选 ${esc(t)}">${STAR}</button>`;
 const tags=c=>mcBadge(c)+unuBadge(c[0])+(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
 const sw=k=>`<i class="sw" style="--c:var(--s${k})"></i>`;
-function cardHTML(i,n){const c=C[i];return `<div class="card" role="button" tabindex="0" data-i="${i}" style="--n:${n}"><div class="card-top"><span class="tk">${hl(c[0])}</span><span class="badges">${badges(c[3])}</span>${starBtn(c[0])}</div><div class="nm">${hl(c[1])}${c[1]!==c[2]?`<span>${hl(c[2])}</span>`:''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${hl(c[5])}</div>${tags(c)?`<div class="ctags">${tags(c)}</div>`:''}${estrip(c[0])}${ostat(c[0])}<p class="desc">${hl(c[6])}</p></div>`}
+function cardHTML(i,n){const c=C[i];return `<div class="card" role="button" tabindex="0" data-i="${i}" style="--n:${n}"><div class="card-top"><span class="tk">${hl(c[0])}</span><span class="badges">${badges(c[3])}</span>${starBtn(c[0])}</div><div class="nm">${hl(c[1])}${c[1]!==c[2]?`<span>${hl(c[2])}</span>`:''}</div>${qrow(c[0])}<div class="sec">${sw(c[4])}${S[c[4]]} · ${hl(c[5])}</div>${tags(c)?`<div class="ctags">${tags(c)}</div>`:''}${estrip(c[0])}${ostat(c[0])}<p class="desc">${hl(c[6])}</p></div>`}
 const rowHTML=i=>{const c=C[i];return `<tr data-i="${i}" tabindex="0"><td>${starBtn(c[0])}</td><td class="nw"><span class="tk">${hl(c[0])}</span></td><td class="nmc">${hl(c[1])}${c[1]!==c[2]?`<small>${hl(c[2])}</small>`:''}</td><td class="nw"><span class="badges" style="justify-content:flex-start">${badges(c[3])}</span></td><td class="nw"><span class="sec">${sw(c[4])}${S[c[4]]}</span></td><td>${hl(c[5])}</td><td class="num nw">${fmtCap(c[8])}</td>${ocells(c[0])}</tr>`};
 const ocells=t=>{const o=O[t];return o?`<td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td>`:'<td class="num dim">—</td>'.repeat(5)};
 const opt=(type,key,val,label,n,on)=>`<button class="opt ${type}${!n&&!on?' zero':''}" role="${type==='radio'?'radio':'checkbox'}" aria-checked="${on}" data-f="${key}" data-v="${val}"><span class="box"></span><span class="lb">${label}</span><span class="ct">${n}</span></button>`;
@@ -877,7 +895,7 @@ function etfHTML(){
   const grow=(label,key,list)=>{const b=matchETF(key);return `<div class="frow"><b>${label}</b><div class="themes"><button class="chip" data-e="${key}" data-v="" aria-pressed="${!st[key]}">全部<small>${b.length}</small></button>${list.map(([k,l,f])=>{const n=b.filter(f).length;return `<button class="chip${!n&&st[key]!==k?' zero':''}" data-e="${key}" data-v="${k}" aria-pressed="${st[key]===k}">${l}<small>${n}</small></button>`}).join('')}</div></div>`};
   let list=matchETF();const act=st.ecat||st.eiss||st.edir||EG.some(g=>st[g[0]])||st.q;
   const erow=e=>{const o=O[e[0]],sp=o&&nz(o[13])?o[13]:null;
-    return `<article class="idx etfc"><div class="idx-h"><b>${hl(e[3]||e[1])}</b><span class="tk">${hl(e[0])}</span>${starBtn(e[0])}</div>${unuBadge(e[0])?`<div class="ebadges">${unuBadge(e[0])}</div>`:''}<div class="idx-en">${hl(e[1])}</div>${e[4]?`<p>${hl(e[4])}</p>`:''}
+    return `<article class="idx etfc"><div class="idx-h"><b>${hl(e[3]||e[1])}</b><span class="tk">${hl(e[0])}</span>${starBtn(e[0])}</div>${unuBadge(e[0])?`<div class="ebadges">${unuBadge(e[0])}</div>`:''}<div class="idx-en">${hl(e[1])}</div>${qrow(e[0],1)}${e[4]?`<p>${hl(e[4])}</p>`:''}
     <dl><dt>类别</dt><dd>${esc(e[2])}</dd><dt>发行方</dt><dd>${esc(e[5])}</dd>${o?`<dt>现价</dt><dd>$${o[5]}　<span class="${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</span></dd><dt>到期日</dt><dd>${o[12]>=5?'每个交易日都有到期':o[12]?`7 天内有 ${o[12]} 个到期日`:'7 天内没有到期日'}</dd>`:''}</dl>
     ${o?`<div class="eopt"><b>期权<small>Cboe · ${ODATE}${o[14]?` · 这只的数据停在 ${o[14].slice(5)}`:''}</small></b><div class="estat"><div><b>${o[9]?'第 '+o[9]:'—'}</b><span>成交排名</span></div><div><b>${fmtN(o[0])}</b><span>成交（张）</span></div><div><b>${fmtN(o[11])}</b><span>未平仓${qk('未平仓')}</span></div><div><b>${o[10]?o[10].toFixed(1)+'%':'—'}</b><span>IV30${qk('IV30')}</span></div><div><b>${nz(o[3])?o[3].toFixed(2):'—'}</b><span>Put/Call${qk('P/C')}</span></div><div><b class="${sp==null?'':sp>10?'hi':sp<=2?'lo':''}">${sp==null?'—':sp+'%'}</b><span>平值价差${qk('平值价差')}</span></div></div>${keyline(o)}</div>`:'<p class="d-sm">这天没有抓到它的期权数据。</p>'}
     <div class="elinks">${chainLinks(e[0],1)}</div></article>`};
@@ -898,9 +916,9 @@ function watchHTML(){const list=[...favs].filter(t=>CI.has(t)||ETFSET.has(t));
   const k=st.wsort||'add',val=r=>k==='v'?(r.o?r.o[0]:-1):k==='iv'?(r.o?r.o[10]:-1):k==='em'?(r.o&&r.o[17]?r.o[17][2]:-1):k==='chg'?(r.o?Math.abs(r.o[6]):-1):k==='earn'?(r.days==null||r.days<0?-1e9:-r.days):0;
   if(k!=='add')rows.sort((a,b)=>val(b)-val(a));
   return `<div class="res-head"><p class="count">自选 <b>${list.length}</b> 只</p><div class="res-tools"><label for="wsort" hidden>排序</label><select class="sort" id="wsort">${[['add','按加入顺序'],['earn','财报日 近→远'],['v','期权成交 高→低'],['iv','IV30 高→低'],['em','预期波动 大→小'],['chg','涨跌幅 大→小']].map(([v,l])=>`<option value="${v}"${k===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
-  <div class="tbl-wrap"><table class="lbt watch"><thead><tr><th></th><th>代码</th><th>名称</th><th class="num">现价</th><th class="num">涨跌</th><th class="num">期权成交</th><th>走势</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th class="num">预期波动</th><th>财报 / 异动</th><th>关键价位</th></tr></thead><tbody>
+  <div class="tbl-wrap"><table class="lbt watch"><thead><tr><th></th><th>代码</th><th>名称</th><th class="num">现价</th><th class="num">涨跌</th><th>当天走势</th><th class="num">期权成交</th><th>成交走势</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th class="num">预期波动</th><th>财报 / 异动</th><th>关键价位</th></tr></thead><tbody>
   ${rows.map(({t,o,i,c,e})=>`<tr><td>${starBtn(t)}</td><td class="nw"><button class="lbtk" ${i>=0?`data-i="${i}"`:`data-etf="${t}"`}>${t}</button>${e?'<span class="tg">ETF</span>':''}</td><td class="nmc">${esc(c?c[1]:(e[3]||e[1]))}${c&&c[8]?`<small>${fmtCap(c[8])}</small>`:''}</td>
-   <td class="num">${o?'$'+o[5]:'—'}</td><td class="num ${o&&o[6]>=0?'up':'dn'}">${o?(o[6]>0?'+':'')+o[6].toFixed(2)+'%':'—'}</td><td class="num">${o?fmtN(o[0]):'—'}</td><td data-spark-mini="${t}">${sparkHTML(t,1)}</td>
+   <td class="num">${o?'$'+o[5]:'—'}</td><td class="num ${o&&o[6]>=0?'up':'dn'}">${o?(o[6]>0?'+':'')+o[6].toFixed(2)+'%':'—'}</td><td><span class="ic-w ic-mini" data-ic="${t}">${ichart(t,80,24)}</span></td><td class="num">${o?fmtN(o[0]):'—'}</td><td data-spark-mini="${t}">${sparkHTML(t,1)}</td>
    <td class="num">${o&&o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${o&&nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${o&&nz(o[13])?o[13]+'%':'—'}</td><td class="num">${o&&o[17]?'±'+o[17][2]+'%':'—'}</td>
    <td class="nw">${earnBadge(t)}${unuBadge(t)}</td><td class="nw small">${o&&o[19]?`C $${o[19][0]} · P $${o[19][2]}`:'—'}${o&&o[20]?` · 痛点 $${o[20][1]}`:''}</td></tr>`).join('')}</tbody></table></div>
   <p class="d-sm">自选存在这台设备的浏览器里，换设备或清除浏览器数据后要重新添加。“关键价位”里 C 是 Call 墙、P 是 Put 墙。</p>`}
@@ -917,7 +935,7 @@ function indicesHTML(){const list=matchIdx();
   return (st.q?'':`<h2>三大指数的行业构成<small>按成分股数量统计，不是按权重</small></h2><div class="cmp">${[1,2,3].map((k,n)=>compHTML(k,n)).join('')}</div>
   <div class="overlap"><button data-goidx="tri"><b>${cnt(c=>c[3]===7)}</b><span>三大指数都在 →</span></button><div><b>${cnt(c=>(c[3]&3)===3)}</b><span>同在标普500 和纳指100</span></div><div><b>${cnt(c=>(c[3]&5)===5)}</b><span>同在标普500 和道指30</span></div><div><b>${cnt(c=>(c[3]&3)===2)}</b><span>在纳指100 但不在标普500</span></div></div>
   <h2>指数一览<small>${I.length} 个，点 ETF 代码可跳到对应 ETF</small></h2>`)+
-  (list.length?`<div class="idx-grid">${list.map((r,n)=>`<article class="idx" style="--n:${n}"><div class="idx-h"><b>${hl(r[0])}</b><span class="tk">${hl(r[2])}</span></div><div class="idx-en">${hl(r[1])}</div><p>${hl(r[8])}</p><dl><dt>成分数量</dt><dd>${esc(r[3])}</dd><dt>加权方式</dt><dd>${esc(r[4])}</dd><dt>编制方</dt><dd>${esc(r[5])}</dd><dt>对应 ETF</dt><dd>${tlinks(r[6])}</dd><dt>对应期货</dt><dd>${esc(r[7])}</dd></dl>${ixopt(r[2])}</article>`).join('')}</div>`:`<div class="empty"><b>没有匹配的指数</b>换个关键词试试。</div>`)}
+  (list.length?`<div class="idx-grid">${list.map((r,n)=>`<article class="idx" style="--n:${n}"><div class="idx-h"><b>${hl(r[0])}</b><span class="tk">${hl(r[2])}</span></div><div class="idx-en">${hl(r[1])}</div>${qrow((IXO[r[2]]||[]).find(t=>O[t]),1)}<p>${hl(r[8])}</p><dl><dt>成分数量</dt><dd>${esc(r[3])}</dd><dt>加权方式</dt><dd>${esc(r[4])}</dd><dt>编制方</dt><dd>${esc(r[5])}</dd><dt>对应 ETF</dt><dd>${tlinks(r[6])}</dd><dt>对应期货</dt><dd>${esc(r[7])}</dd></dl>${ixopt(r[2])}</article>`).join('')}</div>`:`<div class="empty"><b>没有匹配的指数</b>换个关键词试试。</div>`)}
 
 /* ---- 主区域事件 ---- */
 function favToggle(t){favs.has(t)?favs.delete(t):favs.add(t);store.set('favs',[...favs]);toast(favs.has(t)?`已把 ${t} 加入自选`:`已把 ${t} 移出自选`)}
@@ -973,6 +991,24 @@ function obox2(t){const o=O[t];if(!o)return'';const e=o[16],w=o[19],m=o[20],u=o[
   if(m)rows.push(`<div class="kv2"><span>最大痛点${qk('最大痛点')}</span><b>$${m[1]}</b><small>${md(m[0])} 月度到期</small></div>`);
   if(u)rows.push(`<div class="kv2${isUnu(o)?' hot':''}"><span>最大异动合约${qk('异动')}</span><b>${md(u[0])} $${u[2]} ${u[1]==='C'?'Call':'Put'}</b><small>成交 ${fmtN(u[3])} 张，未平仓 ${fmtN(u[4])} 张${o[22]>1?`；共 ${o[22]} 个合约成交超过未平仓`:''}</small></div>`);
   return rows.length?`<div class="kv2s">${rows.join('')}</div>`:''}
+/* ---- 当天分时走势：每天收盘后取一次，存在 intraday.json（5 分钟一个点，存的是相对昨收的万分比） ---- */
+let INTRA=null,INTRAERR=false;
+const fillIC=()=>{$$('[data-ic]').forEach(el=>{const m=el.classList.contains('ic-mini');el.innerHTML=ichart(el.dataset.ic,m?80:120,m?24:32)});$$('[data-icb]').forEach(el=>el.innerHTML=bigIC(el.dataset.icb))};
+fetch('intraday.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.s)INTRA=j;else INTRAERR=true;fillIC()}).catch(()=>{INTRAERR=true;fillIC()});
+function ichart(t,w,h){const v=t&&INTRA&&INTRA.s[t];if(!v)return'';const a=v[1],N=78,lo=Math.min(0,...a),hi=Math.max(0,...a),r=hi-lo||1,p=2;
+  const X=i=>(i/N*w).toFixed(1),Y=x=>(p+(hi-x)/r*(h-2*p)).toFixed(1),ln=a.map((x,i)=>(i?'L':'M')+X(i)+' '+Y(x)).join('');
+  return `<svg class="ic ${a[a.length-1]>=0?'up':'dn'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path class="ar" d="${ln}L${X(a.length-1)} ${h}L0 ${h}Z"/><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}"/><path class="ln" d="${ln}"/></svg>`}
+const f2=x=>x>=1000?x.toFixed(1):x.toFixed(2);
+function qrow(t,big){const o=t&&O[t];if(!o||!o[5])return'';
+  return `<div class="qrow${big?' big':''}"><span class="ic-w" data-ic="${t}">${ichart(t,120,32)}</span><span class="qp"><b>${o[8]===2?'':'$'}${(t==='DJX'?o[5]*100:+o[5]).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b><i class="${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</i></span></div>`}
+function bigIC(t){const v=INTRA&&INTRA.s[t];if(!v)return `<p class="d-sm">${INTRA||INTRAERR?'这天没有取到它的分时走势，下一次自动更新后再看。':'正在读取当天走势…'}</p>`;
+  const [pc,a]=v,P=x=>pc*(1+x/1e4),hi=Math.max(...a),lo=Math.min(...a);
+  return `<div class="icb" data-t="${esc(t)}"><div class="icb-h"><span>昨收 <b>$${f2(pc)}</b></span><span>盘中高 <b class="up">$${f2(P(hi))}</b></span><span>盘中低 <b class="dn">$${f2(P(lo))}</b></span><span class="icb-read"></span></div><div class="icb-c">${ichart(t,560,150)}<i class="icb-x" hidden></i></div><div class="icb-ax">${[['9:30',0],['11:30',24],['13:30',48],['15:30',72]].map(([l,i])=>`<span style="left:${(i/78*100).toFixed(1)}%">${l}</span>`).join('')}</div></div>`}
+$('#drawer').addEventListener('pointermove',e=>{const c=e.target.closest&&e.target.closest('.icb-c');if(!c)return;const b=c.closest('.icb'),v=INTRA&&INTRA.s[b.dataset.t];if(!v)return;
+  const R=c.getBoundingClientRect(),a=v[1],i=Math.max(0,Math.min(a.length-1,Math.round((e.clientX-R.left)/R.width*78))),m=570+5*i,x=b.querySelector('.icb-x');
+  x.hidden=false;x.style.left=(i/78*100)+'%';
+  b.querySelector('.icb-read').innerHTML=`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')} <b>$${f2(v[0]*(1+a[i]/1e4))}</b> <b class="${a[i]>=0?'up':'dn'}">${a[i]>0?'+':''}${(a[i]/100).toFixed(2)}%</b>`});
+$('#drawer').addEventListener('pointerleave',()=>{$$('#drawer .icb-x').forEach(x=>x.hidden=true);$$('#drawer .icb-read').forEach(x=>x.innerHTML='')});
 /* ---- 走势小图：每天收盘后记一笔，存在 hist.json ---- */
 let HIST=null,HISTERR=false;
 fetch('hist.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(h=>{HIST=h;if(!h)HISTERR=true;$$('[data-spark]').forEach(el=>el.innerHTML=sparkHTML(el.dataset.spark))}).catch(()=>{HISTERR=true;$$('[data-spark]').forEach(el=>el.innerHTML=sparkHTML(el.dataset.spark))});
@@ -999,6 +1035,7 @@ function openDrawer(i){const c=C[i],d=$('#drawer');if(!d.classList.contains('on'
   <div class="d-row">${badges(c[3])}${tags(c)}${MW.has(c[0])?'<span class="tg">周一 / 周三 / 周五到期</span>':''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${esc(c[5])}</div>${estrip(c[0],1)}
   <div class="d-h">靠什么赚钱</div><p class="d-desc">${esc(c[6])}</p>${c[7]?`<div class="d-note">${esc(c[7])}</div>`:''}
   ${th.length?`<div class="d-h">所属主题</div><div class="d-rel">${th.map(k=>`<button class="pill" data-theme="${k}">${TH[k].n}</button>`).join('')}</div>`:''}
+  <div class="d-h">当天走势<small>${INTRA&&INTRA.d?'美东 '+md(INTRA.d)+' · 5 分钟一个点':''}</small></div><div data-icb="${esc(c[0])}">${bigIC(c[0])}</div>
   <div class="d-h">期权数据<small>Cboe · ${ODATE}</small></div>${obox(c[0])}${obox2(c[0])}<div class="d-h">最近的走势<small>每个交易日收盘后记一笔</small></div><div class="sparkbox" data-spark="${esc(c[0])}">${sparkHTML(c[0])}</div>
   ${newsHTML(c[0])}
   <div class="d-h">看期权</div><div class="d-links">${chainLinks(c[0],0)}<a href="https://finance.yahoo.com/calendar/earnings?symbol=${encodeURIComponent(y)}" target="_blank" rel="noopener">财报日期 ↗</a></div>
@@ -1168,8 +1205,9 @@ const NEWS=DATA.N||{};
 const ago=d=>{if(!d)return'';const m=Math.round((Date.now()-Date.parse(d))/6e4);return m<60?Math.max(1,m)+' 分钟前':m<1440?Math.round(m/60)+' 小时前':Math.round(m/1440)+' 天前'};
 function estrip(t,big){const e=earnOf(t);if(!e)return'';const n=dayDiff(etToday,e[0]);if(n<0||n>14)return'';const o=O[t];
   return `<div class="estrip${n<=3?' hot':''}${big?' big':''}"><b>财报 ${md(e[0])} ${wkd(e[0])}${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}</b><span>${n===0?'今天':n===1?'明天':n+' 天后'}</span>${o&&o[18]?`<span>财报后预期 ±${o[18][2]}%</span>`:''}</div>`}
+const newsLi=([ti,l,d,zh])=>`<li><a href="${esc(l)}" target="_blank" rel="noopener">${esc(zh||ti)}</a>${zh?`<span class="en">${esc(ti)}</span>`:''}<small>${ago(d)}</small></li>`;
 function newsHTML(t){const L=NEWS[t];if(!L||!L.length)return'';
-  return `<div class="d-h">相关新闻<small>雅虎财经，英文标题</small></div><ul class="news">${L.map(([ti,l,d])=>`<li><a href="${esc(l)}" target="_blank" rel="noopener">${esc(ti)}</a><small>${ago(d)}</small></li>`).join('')}</ul>`}
+  return `<div class="d-h">相关新闻<small>雅虎财经${L.some(x=>x[3])?'，中文是机器翻译，点开是英文原文':'，英文标题'}</small></div><ul class="news">${L.map(newsLi).join('')}</ul>`}
 function renderFocus(){const el=$('#focus');if(!el)return;
   const er=C.map((c,i)=>[i,earnOf(c[0])]).filter(([i,e])=>e&&dayDiff(etToday,e[0])>=0&&dayDiff(etToday,e[0])<=7);
   const erTop=er.slice().sort((a,b)=>(C[b[0]][8]||0)-(C[a[0]][8]||0)).slice(0,7).sort((a,b)=>a[1][0]<b[1][0]?-1:a[1][0]>b[1][0]?1:(a[1][1]==='pre'?0:1)-(b[1][1]==='pre'?0:1));
@@ -1180,7 +1218,7 @@ function renderFocus(){const el=$('#focus');if(!el)return;
   const earnCard=`<div class="fcard f-earn"><h3><i></i>本周财报<small>未来 7 天 ${er.length} 家</small></h3>${erTop.length?`<ul>${erTop.map(([i,e])=>{const c=C[i],o=O[c[0]],n=dayDiff(etToday,e[0]);return `<li><span class="fd${n<=1?' hot':''}">${n===0?'今天':n===1?'明天':md(e[0])+' '+wkd(e[0])}<small>${e[1]==='pre'?'盘前':e[1]==='post'?'盘后':''}</small></span>${tkBtn(c[0])}<span class="fn">${esc(c[1])}</span><span class="fv">${o&&o[18]?'±'+o[18][2]+'%':''}</span></li>`}).join('')}</ul><button class="fmore" data-go="earn">看全部 ${er.length} 家 →</button>`:'<p class="fe">财报日历下一次自动更新后显示。</p>'}</div>`;
   const calCard=`<div class="fcard f-cal"><h3><i></i>重要日程<small>未来 14 天</small></h3>${ev.length?`<ul>${ev.map(([d,k,t,c])=>{const n=dayDiff(etToday,d);return `<li><span class="fd${n<=1?' hot':''}">${n===0?'今天':n===1?'明天':md(d)+' '+wkd(d)}</span><span class="fk ${c}">${k}</span></li>`}).join('')}</ul>`:'<p class="fe">未来 14 天没有休市、议息、CPI、非农或月度到期。</p>'}<button class="fmore" data-go="cal">看完整日历 →</button></div>`;
   const unuCard=`<div class="fcard f-unu"><h3><i></i>期权异动<small>${ODATE}</small></h3>${un.length?`<ul>${un.map(([t,o])=>{const u=o[21];return `<li>${tkBtn(t)}<span class="fn">${md(u[0])} $${u[2]} ${u[1]==='C'?'Call':'Put'}</span><span class="fv">${fmtN(u[3])} 张</span></li>`}).join('')}</ul><button class="fmore" data-go="unu">看全部异动 →</button>`:'<p class="fe">异动数据下一次自动更新后显示。</p>'}</div>`;
-  const newsCard=`<div class="fcard f-news"><h3><i></i>市场新闻<small>雅虎财经</small></h3>${mk.length?`<ul class="fnews">${mk.map(([ti,l,d])=>`<li><a href="${esc(l)}" target="_blank" rel="noopener">${esc(ti)}</a><small>${ago(d)}</small></li>`).join('')}</ul>`:'<p class="fe">新闻下一次自动更新后显示。</p>'}</div>`;
+  const newsCard=`<div class="fcard f-news"><h3><i></i>市场新闻<small>${mk.length&&/[\u4e00-\u9fff]/.test(mk[0][0])?'新浪财经':'雅虎财经'}</small></h3>${mk.length?`<ul class="fnews">${mk.map(newsLi).join('')}</ul>`:'<p class="fe">新闻下一次自动更新后显示。</p>'}</div>`;
   el.innerHTML=`<div class="focus-h"><b>今日看点</b><span>美东 ${ODATE} 收盘后的数据</span></div><div class="fgrid">${earnCard}${calCard}${unuCard}${newsCard}</div>`}
 $('#focus').addEventListener('click',e=>{const T=e.target;let b;
   if(b=T.closest('[data-fi]')){openDrawer(+b.dataset.fi);return}
