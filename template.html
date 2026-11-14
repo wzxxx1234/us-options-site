@@ -1,6 +1,6 @@
 <title>美股选股手册</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<script>try{var _t=localStorage.getItem("theme");if(_t&&!document.documentElement.dataset.theme)document.documentElement.dataset.theme=JSON.parse(_t)}catch(e){}</script>
+<script>try{var _t=JSON.parse(localStorage.getItem("theme2")||"null");if(_t==="light"||_t==="dark")document.documentElement.dataset.theme=_t}catch(e){}</script>
 <style>
 /* 布局：顶部“全市场点阵”（一格一家公司）→ 粘性栏目与搜索 → 左侧分组筛选栏 + 右侧结果；点阵、筛选栏、结果共用同一份筛选状态 */
 :root{
@@ -52,6 +52,9 @@ h1 em{font-style:normal;color:var(--accent)}
 .theme-btn{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;transition:transform .25s,border-color .2s}
 .theme-btn:hover{border-color:var(--accent);transform:rotate(20deg)}
 .theme-btn svg{width:20px;height:20px}
+.mcb{font-size:11px;font-weight:500;padding:1px 6px;border-radius:5px;white-space:nowrap;margin-right:4px;background:var(--sunk);color:var(--ink)}
+.mcb.mc-mega{background:var(--accent-soft);color:var(--accent)}.mcb.mc-mid{background:var(--warn-soft);color:var(--warn)}.mcb.mc-small{color:var(--loss)}
+.mcd{display:block;font-size:11px;color:var(--muted);font-weight:400}
 .datastamp{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:14px 0 0;font-size:12.5px;color:var(--muted)}
 .datastamp i{width:7px;height:7px;border-radius:50%;background:var(--gain);flex:none}
 .datastamp.old i{background:var(--loss)}.datastamp b{color:var(--loss);font-weight:500}
@@ -439,8 +442,8 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
       <h1>美股<em>选股</em>手册</h1>
       <p class="lede">给做个股和 ETF 期权的人用：三大指数成分股的中文介绍、常用 ETF，加上期权到期日、日内时间表、合约规则和盈亏计算。</p>
     </div>
-    <button class="theme-btn" id="theme-toggle" aria-label="切换浅色 / 深色">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg>
+    <button class="theme-btn" id="theme-toggle" aria-label="外观：跟随系统" title="外观：跟随系统">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/></svg>
     </button>
   </div>
   <button class="now" id="now" aria-label="查看日内时间表"></button>
@@ -490,6 +493,10 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
 const DATA=/*__DATA__*/;
 const {S,C,I,E}=DATA;const O=DATA.O||{};
 const nz=v=>v!=null;
+const MCT=[['mega','超大盘','≥ 2000 亿美元',v=>v>=2000],['large','大盘','100–2000 亿美元',v=>v>=100&&v<2000],['mid','中盘','20–100 亿美元',v=>v>=20&&v<100],['small','小盘','< 20 亿美元',v=>v>0&&v<20]];
+const mcTier=v=>v?MCT.find(x=>x[3](v)):null;
+const fmtCap=v=>!v?'—':v>=10000?'$'+(v/10000).toFixed(2)+' 万亿':v>=100?'$'+Math.round(v)+' 亿':'$'+v.toFixed(1)+' 亿';
+const mcBadge=c=>{const t=mcTier(c[8]);return t?`<span class="mcb mc-${t[0]}">${t[1]} · ${fmtCap(c[8])}</span>`:''};
 const OD=DATA.OD||{date:'',ts:''};const ODATE=OD.date?(+OD.date.slice(5,7))+' 月 '+(+OD.date.slice(8))+' 日':'';const ECUR=new Set(DATA.EC||[]);
 const CI=new Map(C.map((c,i)=>[c[0],i]));
 const fmtN=n=>n>=1e8?(n/1e8).toFixed(1)+'亿':n>=1e4?(n/1e4).toFixed(n>=1e6?0:1)+'万':String(n);
@@ -553,7 +560,7 @@ const EG=[['eopt','期权活跃',EOR],['eivl','IV30',eW(OIVL)],['espr','买卖�
 const eclear=()=>{st.ecat=st.eiss=st.edir='';EG.forEach(g=>st[g[0]]='');st.eshown=50};
 const EHAY=E.map(e=>e.join(' ').toLowerCase());
 
-const st={view:'companies',q:'',idx:'all',sec:new Set(),theme:-1,tr:'',fav:false,sort:'d',mode:store.get('mode','card'),shown:36,color:'sector',ecat:'',eiss:'',edir:'',eopt:'',eivl:'',espr:'',eexp:'',epc:'',escope:'',esort:'v',eshown:50,efOpen:false,orank:'',opc:'',lk:'',liv:'',lsort:'v',lpc:'',lsp:'',lshown:30};
+const st={view:'companies',q:'',idx:'all',mc:'',lmc:'',sec:new Set(),theme:-1,tr:'',fav:false,sort:'d',mode:store.get('mode','card'),shown:36,color:'sector',ecat:'',eiss:'',edir:'',eopt:'',eivl:'',espr:'',eexp:'',epc:'',escope:'',esort:'v',eshown:50,efOpen:false,orank:'',opc:'',lk:'',liv:'',lsort:'v',lpc:'',lsp:'',lshown:30};
 if(!['card','table','group'].includes(st.mode))st.mode='card';
 let favs=new Set(store.get('favs',[]));
 let RES=[];
@@ -590,6 +597,7 @@ function pass(i,skip){const c=C[i];
   if(st.q&&!HAY[i].includes(st.q))return false;
   if(skip!=='idx'&&!IDX.find(x=>x[0]===st.idx)[2](c))return false;
   if(skip!=='sec'&&st.sec.size&&!st.sec.has(c[4]))return false;
+  if(skip!=='mc'&&st.mc&&!(c[8]&&MCT.find(x=>x[0]===st.mc)[3](c[8])))return false;
   if(skip!=='theme'&&st.theme>=0&&!TH[st.theme].set.has(i))return false;
   if(skip!=='tr'&&st.tr&&!TR.find(x=>x[0]===st.tr)[3](c))return false;
   if(skip!=='fav'&&st.fav&&!favs.has(c[0]))return false;
@@ -597,13 +605,15 @@ function pass(i,skip){const c=C[i];
   return true}
 function facet(skip,test){let n=0;for(let i=0;i<C.length;i++)if(pass(i,skip)&&test(C[i],i))n++;return n}
 function toggleSec(k){st.sec.has(k)?st.sec.delete(k):st.sec.add(k);st.shown=36}
-function clearAll(){OG.forEach(g=>st[g[0]]='');st.idx='all';st.sec.clear();st.theme=-1;st.tr='';st.fav=false;st.shown=36;setQ('')}
-const nActive=()=>(st.idx!=='all')+st.sec.size+(st.theme>=0)+(st.tr?1:0)+(st.fav?1:0)+OG.filter(g=>st[g[0]]).length;
+function clearAll(){OG.forEach(g=>st[g[0]]='');st.mc='';st.idx='all';st.sec.clear();st.theme=-1;st.tr='';st.fav=false;st.shown=36;setQ('')}
+const nActive=()=>(st.idx!=='all')+(st.mc?1:0)+st.sec.size+(st.theme>=0)+(st.tr?1:0)+(st.fav?1:0)+OG.filter(g=>st[g[0]]).length;
 const OSORT={v:0,iv:10,spr:13,oi:11};
 function matchCompanies(){let r=[];for(let i=0;i<C.length;i++)if(pass(i))r.push(i);
   if(st.q){const sc=i=>{const t=C[i][0].toLowerCase();return t===st.q?0:t.startsWith(st.q)?1:(C[i][1]+C[i][2]).toLowerCase().includes(st.q)?2:3};r.sort((a,b)=>sc(a)-sc(b)||a-b)}
   else if(st.sort==='a')r.sort((a,b)=>C[a][0]<C[b][0]?-1:1);
   else if(st.sort==='s')r.sort((a,b)=>C[a][4]-C[b][4]||a-b);
+  else if(st.sort==='mc')r.sort((a,b)=>(C[b][8]||0)-(C[a][8]||0));
+  else if(st.sort==='mca')r.sort((a,b)=>(C[a][8]||1e9)-(C[b][8]||1e9));
   else if(OSORT[st.sort]!=null){const k=OSORT[st.sort],g=i=>{const o=O[C[i][0]];return o&&nz(o[k])?(k===13?-o[k]:o[k]):-1e9};r.sort((a,b)=>g(b)-g(a)||a-b)}
   return r}
 const etfPass=(e,j,skip)=>(!st.q||EHAY[j].includes(st.q))&&(skip==='ecat'||!st.ecat||e[2]===st.ecat)&&(skip==='eiss'||!st.eiss||e[5]===st.eiss)&&(skip==='edir'||!st.edir||e[6]===st.edir)&&ePassG(e,skip);
@@ -638,10 +648,10 @@ function hl(s){s=String(s);if(!st.q)return esc(s);const i=s.toLowerCase().indexO
 const badges=f=>f?((f&1?'<span class="bd sp">标普500</span>':'')+(f&2?'<span class="bd ndx">纳指100</span>':'')+(f&4?'<span class="bd dow">道指30</span>':'')):'<span class="bd none">指数外</span>';
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></svg>';
 const starBtn=(t,cls)=>`<button class="star ${cls||''}" data-fav="${esc(t)}" aria-pressed="${favs.has(t)}" aria-label="自选 ${esc(t)}">${STAR}</button>`;
-const tags=c=>(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
+const tags=c=>mcBadge(c)+(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
 const sw=k=>`<i class="sw" style="--c:var(--s${k})"></i>`;
 function cardHTML(i,n){const c=C[i];return `<div class="card" role="button" tabindex="0" data-i="${i}" style="--n:${n}"><div class="card-top"><span class="tk">${hl(c[0])}</span><span class="badges">${badges(c[3])}</span>${starBtn(c[0])}</div><div class="nm">${hl(c[1])}${c[1]!==c[2]?`<span>${hl(c[2])}</span>`:''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${hl(c[5])}${tags(c)}</div>${ostat(c[0])}<p class="desc">${hl(c[6])}</p></div>`}
-const rowHTML=i=>{const c=C[i];return `<tr data-i="${i}" tabindex="0"><td>${starBtn(c[0])}</td><td class="nw"><span class="tk">${hl(c[0])}</span></td><td class="nmc">${hl(c[1])}${c[1]!==c[2]?`<small>${hl(c[2])}</small>`:''}</td><td class="nw"><span class="badges" style="justify-content:flex-start">${badges(c[3])}</span></td><td class="nw"><span class="sec">${sw(c[4])}${S[c[4]]}</span></td><td>${hl(c[5])}</td>${ocells(c[0])}</tr>`};
+const rowHTML=i=>{const c=C[i];return `<tr data-i="${i}" tabindex="0"><td>${starBtn(c[0])}</td><td class="nw"><span class="tk">${hl(c[0])}</span></td><td class="nmc">${hl(c[1])}${c[1]!==c[2]?`<small>${hl(c[2])}</small>`:''}</td><td class="nw"><span class="badges" style="justify-content:flex-start">${badges(c[3])}</span></td><td class="nw"><span class="sec">${sw(c[4])}${S[c[4]]}</span></td><td>${hl(c[5])}</td><td class="num nw">${fmtCap(c[8])}</td>${ocells(c[0])}</tr>`};
 const ocells=t=>{const o=O[t];return o?`<td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td>`:'<td class="num dim">—</td>'.repeat(5)};
 const opt=(type,key,val,label,n,on)=>`<button class="opt ${type}${!n&&!on?' zero':''}" role="${type==='radio'?'radio':'checkbox'}" aria-checked="${on}" data-f="${key}" data-v="${val}"><span class="box"></span><span class="lb">${label}</span><span class="ct">${n}</span></button>`;
 
@@ -649,6 +659,9 @@ function sideHTML(){
   return `<div class="side-head"><span>筛选公司</span><button class="ib" id="sheet-x" aria-label="关闭筛选">×</button></div>
   <div class="fg" role="radiogroup" aria-label="所属指数"><div class="fg-h"><b>所属指数</b><span>单选</span></div>
     ${IDX.map(([k,l,f])=>opt('radio','idx',k,l,facet('idx',f),st.idx===k)).join('')}</div>
+  <div class="fg" role="radiogroup" aria-label="市值"><div class="fg-h"><b>市值</b>${st.mc?'<button data-f="mcclear">清除</button>':'<span>单选</span>'}</div>
+    ${MCT.map(([k,l,d,f])=>opt('radio','mc',k,`${l}<small class="mcd">${d}</small>`,facet('mc',c=>!!c[8]&&f(c[8])),st.mc===k)).join('')}
+    <p>按纳斯达克网站的市值。市值越小，期权通常成交越少、买卖价差越宽、财报跳空越大。</p></div>
   <div class="opt-zone"><div class="oz-h"><b>期权数据筛选</b><span>Cboe 延时数据 · ${ODATE}</span></div>
   ${OG.map(([key,name,list,tip])=>`<div class="fg" role="radiogroup" aria-label="${name}"><div class="fg-h"><b>${name}</b>${st[key]?`<button data-f="oclear" data-v="${key}">清除</button>`:'<span>单选</span>'}</div>
     ${list.map(([k,l,f])=>opt('radio',key,k,l,facet(key,c=>!!O[c[0]]&&f(O[c[0]])),st[key]===k)).join('')}<p>${tip}</p></div>`).join('')}
@@ -671,13 +684,14 @@ function appliedHTML(){const a=[];
   if(st.theme>=0)a.push(['theme','','主题',TH[st.theme].n]);
   if(st.tr)a.push(['tr','','交易视角',TR.find(x=>x[0]===st.tr)[1]]);
   if(st.fav)a.push(['fav','','','我的自选']);
+  if(st.mc)a.push(['mc','','市值',MCT.find(x=>x[0]===st.mc)[1]]);
   OG.forEach(([k,n,l])=>{if(st[k])a.push([k,'','期权',l.find(x=>x[0]===st[k])[1]])});
   return a.length?`<div class="applied"><span>已选条件</span>${a.map(([f,v,g,l])=>`<button class="ap" data-rm="${f}" data-v="${v}" aria-label="移除 ${l}">${g?`<i>${g}</i>`:''}${l}<span>×</span></button>`).join('')}${a.length>1?'<button class="clear-all" id="clear-all">清除全部</button>':''}</div>`:''}
 function listHTML(res){
   if(!res.length)return `<div class="empty"><b>没有符合条件的公司</b>${st.fav&&!favs.size?'你还没有给任何公司加星标。':'减少几个已选条件再试试。'}<br><button id="empty-clear">清除全部条件</button></div>`;
   if(st.mode==='group')return S.map((s,k)=>{const r=res.filter(i=>C[i][4]===k);return r.length?`<section class="grp"><h3>${sw(k)}${s}<small>${r.length} 家</small></h3><div class="pills">${r.map(i=>`<button class="pill" data-i="${i}"><b>${hl(C[i][0])}</b>${hl(C[i][1])}</button>`).join('')}</div></section>`:''}).join('');
   const part=res.slice(0,st.shown),more=res.length>st.shown?`<button class="more" id="more">再显示 36 家（还有 ${res.length-st.shown} 家）</button>`:'';
-  if(st.mode==='table')return `<div class="tbl-wrap"><table><thead><tr><th></th><th>代码</th><th>公司</th><th>所属指数</th><th>行业</th><th>细分领域</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th></tr></thead><tbody id="rows">${part.map(rowHTML).join('')}</tbody></table></div>${more}`;
+  if(st.mode==='table')return `<div class="tbl-wrap"><table><thead><tr><th></th><th>代码</th><th>公司</th><th>所属指数</th><th>行业</th><th>细分领域</th><th class="num">市值</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th></tr></thead><tbody id="rows">${part.map(rowHTML).join('')}</tbody></table></div>${more}`;
   return `<div class="grid" id="rows">${part.map((i,n)=>cardHTML(i,Math.min(n,14))).join('')}</div>${more}`}
 
 let io;
@@ -692,7 +706,7 @@ function render(){
     m.innerHTML=`<div class="layout"><aside class="side${sheetOpen?' on':''}" id="side" aria-label="筛选">${sideHTML()}</aside><section id="results">
       <div class="res-head"><button class="filter-btn" id="open-sheet">筛选${nActive()?`<small>${nActive()}</small>`:''}</button><p class="count" aria-live="polite">共 <b>${RES.length}</b> 家公司</p>
       <div class="res-tools"><span class="toggle" id="vmode">${[['card','卡片'],['table','列表'],['group','分组']].map(([k,l])=>`<button data-m="${k}" aria-pressed="${st.mode===k}">${l}</button>`).join('')}</span>
-      <label for="sort" hidden>排序</label><select class="sort" id="sort"${st.q||st.mode==='group'?' disabled':''}><option value="d">默认顺序</option><option value="a">代码 A→Z</option><option value="s">按行业</option><option value="v">期权成交量 高→低</option><option value="iv">IV30 高→低</option><option value="spr">买卖价差 小→大</option><option value="oi">未平仓量 高→低</option></select></div></div>
+      <label for="sort" hidden>排序</label><select class="sort" id="sort"${st.q||st.mode==='group'?' disabled':''}><option value="d">默认顺序</option><option value="a">代码 A→Z</option><option value="s">按行业</option><option value="mc">市值 大→小</option><option value="mca">市值 小→大</option><option value="v">期权成交量 高→低</option><option value="iv">IV30 高→低</option><option value="spr">买卖价差 小→大</option><option value="oi">未平仓量 高→低</option></select></div></div>
       ${appliedHTML()}<div id="list">${listHTML(RES)}</div></section></div>`;
     $('#sort').value=st.sort;$('#side').scrollTop=sy;
     const more=$('#more');if(more&&'IntersectionObserver'in window){io=new IntersectionObserver(en=>{if(en[0].isIntersecting)showMore()},{rootMargin:'500px'});io.observe(more)}
@@ -745,9 +759,9 @@ $('#main').addEventListener('click',e=>{const T=e.target;let b;
   if(b=T.closest('[data-fav]')){const t=b.dataset.fav;favToggle(t);
     if(st.fav)render();else{$$('#main [data-fav]').forEach(x=>{if(x.dataset.fav===t)x.setAttribute('aria-pressed',favs.has(t))});const s=$('#side');if(s){const y=s.scrollTop;s.innerHTML=sideHTML();s.scrollTop=y}}return}
   if(b=T.closest('[data-f]')){const f=b.dataset.f,v=b.dataset.v;
-    if(f==='idx')st.idx=v;else if(f==='sec')toggleSec(+v);else if(f==='theme')st.theme=st.theme===+v?-1:+v;else if(f==='tr')st.tr=st.tr===v?'':v;else if(f==='trclear')st.tr='';else if(f==='fav')st.fav=!st.fav;else if(f==='oclear')st[v]='';else if(OG.some(g=>g[0]===f))st[f]=st[f]===v?'':v;else if(f==='secclear')st.sec.clear();else if(f==='themeclear')st.theme=-1;
+    if(f==='idx')st.idx=v;else if(f==='sec')toggleSec(+v);else if(f==='theme')st.theme=st.theme===+v?-1:+v;else if(f==='tr')st.tr=st.tr===v?'':v;else if(f==='trclear')st.tr='';else if(f==='fav')st.fav=!st.fav;else if(f==='mc')st.mc=st.mc===v?'':v;else if(f==='mcclear')st.mc='';else if(f==='oclear')st[v]='';else if(OG.some(g=>g[0]===f))st[f]=st[f]===v?'':v;else if(f==='secclear')st.sec.clear();else if(f==='themeclear')st.theme=-1;
     st.shown=36;render();return}
-  if(b=T.closest('[data-rm]')){const f=b.dataset.rm;if(f==='q')setQ('');else if(f==='idx')st.idx='all';else if(f==='sec')st.sec.delete(+b.dataset.v);else if(f==='theme')st.theme=-1;else if(f==='tr')st.tr='';else if(OG.some(g=>g[0]===f))st[f]='';else st.fav=false;st.shown=36;render();return}
+  if(b=T.closest('[data-rm]')){const f=b.dataset.rm;if(f==='q')setQ('');else if(f==='idx')st.idx='all';else if(f==='sec')st.sec.delete(+b.dataset.v);else if(f==='theme')st.theme=-1;else if(f==='tr')st.tr='';else if(f==='mc')st.mc='';else if(OG.some(g=>g[0]===f))st[f]='';else st.fav=false;st.shown=36;render();return}
   if(T.closest('#clear-all,#empty-clear')){clearAll();render();return}
   if(b=T.closest('#vmode button')){st.mode=b.dataset.m;store.set('mode',st.mode);st.shown=36;render();return}
   if(T.closest('#more')){showMore();return}
@@ -819,7 +833,16 @@ $('#drawer').addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=[...
 let tt;function toast(s){const t=$('#toast');t.textContent=s;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800)}
 const totop=$('#totop');let sTick=0;addEventListener('scroll',()=>{if(sTick)return;sTick=1;requestAnimationFrame(()=>{sTick=0;totop.classList.toggle('on',scrollY>$('#bar').offsetTop+500)})},{passive:true});
 totop.addEventListener('click',()=>window.scrollTo({top:$('#bar').offsetTop,behavior:reduce?'auto':'smooth'}));
-$('#theme-toggle').addEventListener('click',()=>{const r=document.documentElement,c=r.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),n=c==='dark'?'light':'dark';r.dataset.theme=n;store.set('theme',n)});
+/* 外观：跟随系统 → 浅色 → 深色 → 跟随系统 */
+const TICON={auto:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/>',
+  light:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/>',
+  dark:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'};
+const TNAME={auto:'跟随系统',light:'浅色',dark:'深色'};
+function applyTheme(m,say){const r=document.documentElement;if(m==='auto')delete r.dataset.theme;else r.dataset.theme=m;
+  const b=$('#theme-toggle');b.querySelector('svg').innerHTML=TICON[m];b.setAttribute('aria-label','外观：'+TNAME[m]);b.title='外观：'+TNAME[m]+'（点击切换）';
+  if(say)toast('外观：'+TNAME[m]+(m==='auto'?'，系统切换深浅色时网页跟着变':''))}
+let tmode=store.get('theme2','auto');if(!['auto','light','dark'].includes(tmode))tmode='auto';applyTheme(tmode);
+$('#theme-toggle').addEventListener('click',()=>{tmode={auto:'light',light:'dark',dark:'auto'}[tmode];store.set('theme2',tmode);applyTheme(tmode,true)});
 
 /* ---- 期权台：时钟、时间表、到期日、计算器 ---- */
 const usd=n=>{const v=Math.round(Math.abs(n)*100)/100;return (n<0?'-':'')+'$'+v.toLocaleString('en-US',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})};
@@ -899,15 +922,16 @@ function osi(){const el=$('#o-in'),o=$('#osiout');if(!o)return;const m=el.value.
   o.innerHTML=ok?`<span>标的<b>${m[1]}</b></span><span>到期日<b>20${m[2]} 年 ${+m[3]} 月 ${+m[4]} 日，周${'日一二三四五六'[d.getUTCDay()]}</b></span><span>类型<b>${m[5]==='C'?'看涨 Call':'看跌 Put'}</b></span><span>行权价<b>${(+m[6]/1000).toString()}</b></span><span>一张对应<b>100 股</b></span>`:'<span>日期无效<b>请检查年月日</b></span>'}
 function initTrade(){setLegs();bs();osi()}
 function lbHTML(){
-  let r=Object.entries(O).filter(([t,o])=>o[0]>0&&(!st.lk||String(o[8])===st.lk)&&(!st.liv||OIVL.find(x=>x[0]===st.liv)[2](o))&&(!st.lsp||OSP.find(x=>x[0]===st.lsp)[2](o))&&(!st.lpc||OPC.find(x=>x[0]===st.lpc)[2](o)));
-  const k={v:0,iv:10,pc:3,chg:6,spr:13,oi:11}[st.lsort],g=o=>st.lsort==='chg'?Math.abs(o[6]):st.lsort==='pc'&&o[0]<1000?-1e9:nz(o[k])?(k===13?-o[k]:o[k]):-1e9;r.sort((a,b)=>g(b[1])-g(a[1]));
+  let r=Object.entries(O).filter(([t,o])=>o[0]>0&&(!st.lk||String(o[8])===st.lk)&&(!st.liv||OIVL.find(x=>x[0]===st.liv)[2](o))&&(!st.lsp||OSP.find(x=>x[0]===st.lsp)[2](o))&&(!st.lpc||OPC.find(x=>x[0]===st.lpc)[2](o))&&(!st.lmc||(CI.has(t)&&MCT.find(x=>x[0]===st.lmc)[3](C[CI.get(t)][8]||0))));
+  const mcOf=t=>CI.has(t)?C[CI.get(t)][8]||0:0;
+  const k={v:0,iv:10,pc:3,chg:6,spr:13,oi:11}[st.lsort],g=o=>st.lsort==='chg'?Math.abs(o[6]):st.lsort==='pc'&&o[0]<1000?-1e9:nz(o[k])?(k===13?-o[k]:o[k]):-1e9;if(st.lsort==='mc')r.sort((a,b)=>mcOf(b[0])-mcOf(a[0]));else r.sort((a,b)=>g(b[1])-g(a[1]));
   const ch=(key,list)=>`<button class="chip" data-lb="${key}" data-v="" aria-pressed="${!st[key]}">全部</button>`+list.map(([v,l])=>`<button class="chip" data-lb="${key}" data-v="${v}" aria-pressed="${st[key]===v}">${l}</button>`).join('');
   const nm=t=>IXN[t]||(CI.has(t)?C[CI.get(t)][1]:(E.find(e=>e[0]===t)||[0,O[t][7]])[1]);
-  return `<div class="lb-f"><div class="themes">${ch('lk',[['0','个股'],['1','ETF'],['2','指数']])}</div><div class="themes">${ch('liv',OIVL)}</div><div class="themes">${ch('lsp',OSP)}</div><div class="themes">${ch('lpc',OPC)}</div>
-  <select class="sort" id="lsort" aria-label="排序">${[['v','成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低'],['pc','P/C 高→低（成交 1000 张以上）'],['chg','涨跌幅绝对值 大→小']].map(([v,l])=>`<option value="${v}"${st.lsort===v?' selected':''}>${l}</option>`).join('')}</select></div>
+  return `<div class="lb-f"><div class="themes">${ch('lk',[['0','个股'],['1','ETF'],['2','指数']])}</div><div class="themes">${ch('liv',OIVL)}</div><div class="themes">${ch('lsp',OSP)}</div><div class="themes">${ch('lpc',OPC)}</div><div class="themes">${ch('lmc',MCT.map(([k,l])=>[k,l+'股']))}</div>
+  <select class="sort" id="lsort" aria-label="排序">${[['v','成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低'],['pc','P/C 高→低（成交 1000 张以上）'],['chg','涨跌幅绝对值 大→小'],['mc','市值 大→小（个股）']].map(([v,l])=>`<option value="${v}"${st.lsort===v?' selected':''}>${l}</option>`).join('')}</select></div>
   <p class="d-sm">共 ${r.length} 只</p>
-  <div class="tbl-wrap"><table class="lbt"><thead><tr><th>代码</th><th>名称</th><th class="num">涨跌</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th>期权链</th></tr></thead><tbody>${r.slice(0,st.lshown).map(([t,o])=>{const inSite=CI.has(t)||o[8]===2||(o[8]&&ETFSET.has(t));
-    return `<tr><td class="nw">${inSite?`<button class="lbtk" data-lt="${t}">${t}</button>`:`<a class="lbtk" href="https://www.barchart.com/stocks/quotes/${encodeURIComponent(t)}/overview" target="_blank" rel="noopener">${t} ↗</a>`}${o[8]?`<span class="tg">${KN(o[8])}</span>`:''}</td><td class="nmc">${esc(nm(t))}</td><td class="num ${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</td><td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td><td class="nw lbl">${chainLinks(t,o[8])}</td></tr>`}).join('')}</tbody></table></div>
+  <div class="tbl-wrap"><table class="lbt"><thead><tr><th>代码</th><th>名称</th><th class="num">市值</th><th class="num">涨跌</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th>期权链</th></tr></thead><tbody>${r.slice(0,st.lshown).map(([t,o])=>{const inSite=CI.has(t)||o[8]===2||(o[8]&&ETFSET.has(t));
+    return `<tr><td class="nw">${inSite?`<button class="lbtk" data-lt="${t}">${t}</button>`:`<a class="lbtk" href="https://www.barchart.com/stocks/quotes/${encodeURIComponent(t)}/overview" target="_blank" rel="noopener">${t} ↗</a>`}${o[8]?`<span class="tg">${KN(o[8])}</span>`:''}</td><td class="nmc">${esc(nm(t))}</td><td class="num nw">${CI.has(t)?fmtCap(C[CI.get(t)][8]):'—'}</td><td class="num ${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</td><td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td><td class="nw lbl">${chainLinks(t,o[8])}</td></tr>`}).join('')}</tbody></table></div>
   ${r.length>st.lshown?`<button class="more" id="lb-more">再显示 50 只（还有 ${r.length-st.lshown} 只）</button>`:''}`}
 function tradeHTML(){const off=bjOff();
   return `<div class="prose" style="max-width:1000px">
