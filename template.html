@@ -7,7 +7,7 @@
   --bg:#F1F4F2; --surface:#FFFFFF; --sunk:#E7ECE9; --ink:#12211D; --muted:#52625C; --line:#D5DCD8;
   --accent:#0B6B6B; --accent-ink:#FFFFFF; --accent-soft:#DCEDEB;
   --sp:#2447C8; --sp-soft:#E1E7FB; --ndx:#A32570; --ndx-soft:#F8E1EE; --dow:#93500A; --dow-soft:#F7E8D3;
-  --warn:#8A4B00; --warn-soft:#FBEFD9; --star:#C98A00; --gain:#1c7a38; --loss:#c0271c; --gain-fill:rgba(28,122,56,.13); --loss-fill:rgba(192,39,28,.10); --off:.13;
+  --warn:#8A4B00; --warn-soft:#FBEFD9; --star:#C98A00; --gain:#1c7a38; --loss:#c0271c; --gain-fill:rgba(28,122,56,.13); --loss-fill:rgba(192,39,28,.10); --off:.13;--tm-mid:#b9bdb8;--tm-na:#dcded9;--tm-hot:#d24b3f;
   --s0:#3B6FE0; --s1:#1E9E8A; --s2:#D1477A; --s3:#E0703B; --s4:#8A5BE0; --s5:#8C7A5B; --s6:#6FA83A; --s7:#C9A227; --s8:#3FB5D6; --s9:#5E7FA8; --s10:#7D8A2E;
   --m-dow:#D98A1F; --m-ndx:#C2459A; --m-sp:#4B6FE3; --m-none:#9AA8A2;
   --shadow:0 1px 2px rgba(18,33,29,.06),0 8px 24px rgba(18,33,29,.08);
@@ -22,7 +22,7 @@
   --sp:#9db4ff; --sp-soft:#222b4a; --ndx:#e9a0cb; --ndx-soft:#3d2434; --dow:#e3b673; --dow-soft:#3a2d16;
   --warn:#f0a94a; --warn-soft:#33270f; --star:#f2c14e; --gain:#4cc26e; --loss:#f0675c; --gain-fill:rgba(76,194,110,.16); --loss-fill:rgba(240,103,92,.15);
   --s0:#7396e6; --s1:#4fb3a1; --s2:#d67a9d; --s3:#dd8c62; --s4:#a48ae0; --s5:#a39479; --s6:#8fbb66; --s7:#d2b352; --s8:#66bdd6; --s9:#839dbe; --s10:#a1ab5c;
-  --m-dow:#e3b673; --m-ndx:#e08fc0; --m-sp:#7396e6; --m-none:#4b4841; --off:.2;
+  --m-dow:#e3b673; --m-ndx:#e08fc0; --m-sp:#7396e6; --m-none:#4b4841; --off:.2;--tm-mid:#46433d;--tm-na:#2f2d29;--tm-hot:#e2625a;
   --shadow:0 14px 32px -16px rgba(0,0,0,.8); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141311; --surface:#1e1d1a; --sunk:#292723; --ink:#ebe7df; --muted:#a8a399; --line:#38352f;
@@ -30,7 +30,7 @@
   --sp:#9db4ff; --sp-soft:#222b4a; --ndx:#e9a0cb; --ndx-soft:#3d2434; --dow:#e3b673; --dow-soft:#3a2d16;
   --warn:#f0a94a; --warn-soft:#33270f; --star:#f2c14e; --gain:#4cc26e; --loss:#f0675c; --gain-fill:rgba(76,194,110,.16); --loss-fill:rgba(240,103,92,.15);
   --s0:#7396e6; --s1:#4fb3a1; --s2:#d67a9d; --s3:#dd8c62; --s4:#a48ae0; --s5:#a39479; --s6:#8fbb66; --s7:#d2b352; --s8:#66bdd6; --s9:#839dbe; --s10:#a1ab5c;
-  --m-dow:#e3b673; --m-ndx:#e08fc0; --m-sp:#7396e6; --m-none:#4b4841; --off:.2;
+  --m-dow:#e3b673; --m-ndx:#e08fc0; --m-sp:#7396e6; --m-none:#4b4841; --off:.2;--tm-mid:#46433d;--tm-na:#2f2d29;--tm-hot:#e2625a;
   --shadow:0 14px 32px -16px rgba(0,0,0,.8); color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -55,6 +55,54 @@ h1 em{font-style:normal;color:var(--accent)}
 .mcb{font-size:11px;font-weight:500;padding:1px 6px;border-radius:5px;white-space:nowrap;margin-right:4px;background:var(--sunk);color:var(--ink)}
 .mcb.mc-mega{background:var(--accent-soft);color:var(--accent)}.mcb.mc-mid{background:var(--warn-soft);color:var(--warn)}.mcb.mc-small{color:var(--loss)}
 .mcd{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.eb,.ub{font-size:11px;font-weight:500;padding:1px 6px;border-radius:5px;white-space:nowrap;margin-right:4px;cursor:help}
+.eb{background:var(--sunk);color:var(--ink)}.eb.soon{background:var(--warn-soft);color:var(--warn)}
+.ub{background:var(--accent-soft);color:var(--accent)}
+.ebadges{margin:-2px 0 8px}
+.q{display:inline-grid;place-items:center;width:15px;height:15px;margin-left:4px;border-radius:50%;border:1px solid var(--line);font-size:10px;font-style:normal;font-weight:600;color:var(--muted);cursor:help;vertical-align:1px;line-height:1}
+.q:hover,.q:focus{border-color:var(--accent);color:var(--accent);outline:none}
+.gtip{position:fixed;z-index:70;left:0;top:0;padding:8px 11px;border-radius:9px;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.55;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s}
+.gtip.on{opacity:1;transform:none}
+.keyline{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--muted)}.keyline b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.kv2s{display:grid;gap:6px;margin-top:10px}
+.kv2{display:grid;grid-template-columns:110px minmax(0,1fr);gap:0 12px;align-items:baseline;background:var(--sunk);border-radius:10px;padding:8px 12px}
+.kv2>span{font-size:12px;color:var(--muted);grid-row:span 2}.kv2>b{font-family:var(--f-mono);font-size:15px}.kv2>small{font-size:12px;color:var(--muted)}
+.kv2.hot{background:var(--accent-soft)}
+.sp2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:6px}
+.sp2>div{background:var(--sunk);border-radius:10px;padding:8px 12px}.sp2 span{font-size:12px;color:var(--muted);display:block}.sp2 small{font-size:11.5px;color:var(--muted)}
+.spark{display:block;max-width:100%;height:auto;margin:4px 0}.spark path{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}.spark circle{fill:var(--accent)}
+.spark.iv path{stroke:var(--warn)}.spark.iv circle{fill:var(--warn)}.spark.mini{margin:0}
+.cal{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cal-r{display:grid;grid-template-columns:86px 130px minmax(0,1fr) 64px;gap:4px 12px;align-items:center;padding:9px 14px;background:var(--surface);font-size:13.5px}
+.cal-d b{font-family:var(--f-mono);margin-right:6px}.cal-d{color:var(--muted)}.cal-k{font-weight:600}.cal-t{color:var(--muted)}.cal-n{text-align:right;font-size:12px;color:var(--muted)}
+.cal-r.off .cal-k{color:var(--loss)}.cal-r.ext .cal-k{color:var(--warn)}.cal-r.live .cal-k{color:var(--accent)}.cal-r.opex .cal-k{color:var(--gain)}
+@media (max-width:640px){.cal-r{grid-template-columns:70px minmax(0,1fr) auto}.cal-t{grid-column:1/-1}}
+.lbt.watch td small,.lbt.wk small{display:block;font-size:11px;color:var(--muted)}.lbt td.small{font-size:12px;color:var(--muted)}
+.wsug{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.tmap{position:relative;width:100%;height:420px;border-radius:10px;overflow:hidden;background:var(--line)}
+.tmap .tm-sec{position:absolute;display:block;font-style:normal;cursor:zoom-in;box-shadow:inset 0 0 0 1px var(--bg)}
+.tmap .tm-sec span{position:absolute;left:4px;top:1px;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;max-width:calc(100% - 8px)}
+.tmap i{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:var(--c);color:#fff;font-style:normal;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,.35);cursor:pointer;transition:opacity .25s,filter .15s;border-radius:2px}
+.tmap i b{font-family:var(--f-mono);font-weight:700}.tmap i span{font-size:.72em;opacity:.95;font-family:var(--f-mono)}
+.tmap i:hover,.tmap i.hot{filter:brightness(1.18);z-index:2;box-shadow:0 0 0 2px var(--ink)}
+.tmap i.off{opacity:.18}
+.tm-back{font-size:12.5px;padding:4px 10px;border-radius:7px;border:1px solid var(--line);margin-right:8px;background:var(--surface)}
+.tm-scale{display:inline-flex;align-items:center;gap:8px}.tm-scale i{display:inline-block;width:120px;height:9px;border-radius:5px}
+.legend .mu{color:var(--muted)}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.18s}
+@media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
+.d-handle{display:none}
+@media (max-width:760px){
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  .bar .views{position:fixed;left:0;right:0;bottom:0;z-index:45;border-radius:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);justify-content:space-between;box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+  .bar .views button{flex:1 0 auto;padding:8px 6px;font-size:13px}
+  .bar .views .ind{top:6px;bottom:calc(6px + env(safe-area-inset-bottom,0px));background:var(--sunk);box-shadow:none}
+  #toast.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  #drawer.drawer{top:auto;left:0;right:0;width:100%;max-height:90vh;border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;transform:translateY(102%);padding-top:6px}
+  #drawer.drawer.on{transform:none}
+  .d-handle{display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 8px}
+  .kv2{grid-template-columns:1fr}.kv2>span{grid-row:auto}
+}
 .datastamp{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:14px 0 0;font-size:12.5px;color:var(--muted)}
 .datastamp i{width:7px;height:7px;border-radius:50%;background:var(--gain);flex:none}
 .datastamp.old i{background:var(--loss)}.datastamp b{color:var(--loss);font-weight:500}
@@ -450,10 +498,10 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
   <div class="stats" id="stats"></div>
   <p class="datastamp" id="datastamp"></p>
 
-  <section class="mosaic-box" aria-label="全市场点阵：每格一家公司">
-    <div class="mosaic-head"><strong>一格一家公司。点格子看介绍，筛选后不符合的会变暗</strong>
-      <span class="mh-r">着色<span class="toggle" id="mode"><button data-m="sector" aria-pressed="true">按行业</button><button data-m="index" aria-pressed="false">按指数</button></span></span></div>
-    <div class="mosaic" id="mosaic" aria-hidden="true"></div>
+  <section class="mosaic-box" aria-label="市场地图：方块大小是市值，颜色是当天表现">
+    <div class="mosaic-head"><strong id="tm-title">市场地图：方块越大市值越大，颜色看当天表现。点行业名放大，点方块看详情</strong>
+      <span class="mh-r"><button class="tm-back" id="tm-back" hidden>← 全部行业</button>颜色<span class="toggle" id="mode"><button data-m="chg" aria-pressed="true">涨跌</button><button data-m="iv" aria-pressed="false">IV30</button><button data-m="vol" aria-pressed="false">期权成交</button></span></span></div>
+    <div class="tmap" id="mosaic" aria-hidden="true"></div>
     <div class="tip" id="tip"></div>
     <div class="legend" id="legend"></div>
   </section>
@@ -467,6 +515,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
       <button role="tab" id="tab-etf" data-v="etf">ETF</button>
       <button role="tab" id="tab-indices" data-v="indices">指数</button>
       <button role="tab" id="tab-trade" data-v="trade">期权</button>
+      <button role="tab" id="tab-watch" data-v="watch">自选</button>
       <button role="tab" id="tab-guide" data-v="guide">入门</button>
       <button role="tab" id="tab-audit" data-v="audit">核查记录</button>
     </div>
@@ -488,6 +537,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-title" tabindex="-1"></aside>
 <button class="totop" id="totop" aria-label="回到筛选栏"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 <div class="toast" id="toast" role="status"></div>
+<div class="gtip" id="gtip" role="tooltip"></div>
 
 <script>
 const DATA=/*__DATA__*/;
@@ -496,6 +546,32 @@ const nz=v=>v!=null;
 const MCT=[['mega','超大盘','≥ 2000 亿美元',v=>v>=2000],['large','大盘','100–2000 亿美元',v=>v>=100&&v<2000],['mid','中盘','20–100 亿美元',v=>v>=20&&v<100],['small','小盘','< 20 亿美元',v=>v>0&&v<20]];
 const mcTier=v=>v?MCT.find(x=>x[3](v)):null;
 const fmtCap=v=>!v?'—':v>=10000?'$'+(v/10000).toFixed(2)+' 万亿':v>=100?'$'+Math.round(v)+' 亿':'$'+v.toFixed(1)+' 亿';
+const etToday=(()=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date())}catch(e){return OD.date}})();
+const dayDiff=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/864e5);
+const md=s=>(+s.slice(5,7))+'/'+(+s.slice(8,10));
+const WK='日一二三四五六';const wkd=s=>'周'+WK[new Date(s+'T12:00:00Z').getUTCDay()];
+const earnOf=t=>{const o=O[t];return o&&o[16]?o[16]:null};
+const earnDays=t=>{const e=earnOf(t);return e?dayDiff(etToday,e[0]):null};
+const earnTxt=e=>{const n=dayDiff(etToday,e[0]);return `${md(e[0])}${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}${n===0?' · 今天':n===1?' · 明天':n>1?' · '+n+' 天后':''}`};
+const GLOSS={'IV30':'未来 30 天的年化隐含波动率，由期权价格反推。数字越大期权越贵；要和这只标的自己平时比，不同标的之间不能直接比',
+ 'P/C':'Put 成交量 ÷ Call 成交量。大于 1 偏防守或看空，小于 0.7 偏进攻或看涨；单日数据噪音大，只作参考',
+ '平值价差':'到期 5 天以上最近一档、最接近现价的 Call：(卖价−买价)÷中间价。越小进出成本越低，超过 10% 要用中间价挂限价单',
+ '未平仓':'还没平仓的合约总数（Open Interest），代表存量；成交量是当天的流量',
+ '预期波动':'用平值跨式（同一行权价的 Call + Put）的价格，估算市场定价的到期前涨跌幅，约等于一倍标准差（约 68% 的概率落在这个范围内）',
+ '财报后预期波动':'财报公布后第一个到期日的平值跨式价格，反映市场预期财报带来的涨跌幅度',
+ '最大痛点':'按未平仓量算，到期时让期权买方整体亏损最多的标的价格。只作参考，不是价格目标',
+ 'Call 墙':'45 天内、现价上方未平仓最多的 Call 行权价，常被看作压力位',
+ 'Put 墙':'45 天内、现价下方未平仓最多的 Put 行权价，常被看作支撑位',
+ '异动':'当天期权成交量相对未平仓量明显偏高，或有大单成交远超未平仓量，说明有新资金进场。只看得到成交量，看不出是买还是卖',
+ '成交排名':'按当天期权成交张数，在网站上同类标的里的排名',
+ '期权异动':'当天期权成交量相对未平仓量明显偏高，或有大单成交远超未平仓量，说明有新资金进场。只看得到成交量，看不出是买还是卖',
+ '财报':'来自纳斯达克财报日历。财报前隐含波动率通常偏高，公布后大幅回落（俗称 IV crush），买方要算进去',
+ '市值':'来自纳斯达克网站，单位美元。市值越小，期权通常成交越少、价差越宽、财报跳空越大'};
+const qk=k=>GLOSS[k]?`<i class="q" tabindex="0" role="button" aria-label="${k} 的解释" data-tip="${esc(GLOSS[k])}">?</i>`:'';
+const isUnu=o=>!!o&&o[0]>=2000&&o[11]>0&&(o[0]/o[11]>=0.6||(o[21]&&o[21][3]>=Math.max(5000,5*o[21][4])));
+const unuBadge=t=>isUnu(O[t])?`<span class="ub" data-tip="${esc(GLOSS['异动'])}">异动</span>`:'';
+const earnBadge=t=>{const e=earnOf(t);if(!e)return'';const n=dayDiff(etToday,e[0]);if(n<0||n>28)return'';return `<span class="eb${n<=7?' soon':''}" data-tip="财报日，来自纳斯达克财报日历。财报前隐含波动率通常偏高，公布后大幅回落">财报 ${earnTxt(e)}</span>`};
+const emTxt=e=>e?`±${e[2]}%（±$${e[1]}，到 ${md(e[0])}）`:'—';
 const mcBadge=c=>{const t=mcTier(c[8]);return t?`<span class="mcb mc-${t[0]}">${t[1]} · ${fmtCap(c[8])}</span>`:''};
 const OD=DATA.OD||{date:'',ts:''};const ODATE=OD.date?(+OD.date.slice(5,7))+' 月 '+(+OD.date.slice(8))+' 日':'';const ECUR=new Set(DATA.EC||[]);
 const CI=new Map(C.map((c,i)=>[c[0],i]));
@@ -505,10 +581,13 @@ const OIVL=[['v80','IV ≥ 80%',o=>o[10]>=80],['v50','IV 50–80%',o=>o[10]>=50&
 const OSP=[['s2','价差 ≤ 2%',o=>nz(o[13])&&o[13]<=2],['s5','价差 2–5%',o=>nz(o[13])&&o[13]>2&&o[13]<=5],['s10','价差 5–10%',o=>nz(o[13])&&o[13]>5&&o[13]<=10],['s99','价差 > 10%',o=>nz(o[13])&&o[13]>10]];
 const OEX=[['d','每日到期',o=>o[12]>=5],['w','7 天内有到期',o=>o[12]>=1]];
 const OPC=[['put','Put 成交多（P/C>1）',o=>nz(o[3])&&o[3]>1],['call','Call 成交多（P/C<0.7）',o=>nz(o[3])&&o[3]<.7]];
-const OG=[['orank','期权成交排名',OR,'按当天期权成交张数排名'],['oivl','隐含波动率（30 天）',OIVL,'iv30：未来 30 天的年化隐含波动率，越高期权越贵'],['ospr','买卖价差',OSP,'到期 5 天以上最近一档、最接近现价的 Call，(卖价−买价)÷中间价'],['oexp','近期到期日',OEX,'按期权链里 7 天内的到期日数'],['opc','当天多空倾向',OPC,'P/C：Put 成交量 ÷ Call 成交量']];
+const OEARN=[['w','7 天内有财报',o=>{const e=o[16];if(!e)return false;const n=dayDiff(etToday,e[0]);return n>=0&&n<=7}],['2w','14 天内有财报',o=>{const e=o[16];if(!e)return false;const n=dayDiff(etToday,e[0]);return n>=0&&n<=14}],['m','28 天内有财报',o=>{const e=o[16];if(!e)return false;const n=dayDiff(etToday,e[0]);return n>=0&&n<=28}]];
+const OUNU=[['y','今天有期权异动',o=>isUnu(o)]];
+const OEM=[['h','预期波动 ≥ 8%',o=>o[17]&&o[17][2]>=8],['m','预期波动 4–8%',o=>o[17]&&o[17][2]>=4&&o[17][2]<8],['l','预期波动 < 4%',o=>o[17]&&o[17][2]<4]];
+const OG=[['oearn','财报',OEARN,'来自纳斯达克财报日历，财报前后期权价格变化最大'],['ounu','期权异动',OUNU,'当天成交量相对未平仓量明显偏高，说明有新资金进场；看不出买卖方向'],['orank','期权成交排名',OR,'按当天期权成交张数排名'],['oem','预期波动',OEM,'最近一个到期日（5 天以上）的平值跨式价格占现价的比例'],['oivl','隐含波动率（30 天）',OIVL,'iv30：未来 30 天的年化隐含波动率，越高期权越贵'],['ospr','买卖价差',OSP,'到期 5 天以上最近一档、最接近现价的 Call，(卖价−买价)÷中间价'],['oexp','近期到期日',OEX,'按期权链里 7 天内的到期日数'],['opc','当天多空倾向',OPC,'P/C：Put 成交量 ÷ Call 成交量']];
 const otest=(list,k)=>{const f=list.find(x=>x[0]===k)[2];return t=>{const o=O[t];return!!o&&f(o)}};
 const pct=v=>nz(v)?Math.round(v)+'%':'—';
-const ostat=t=>{const o=O[t];return o?`<span class="ost">${o[9]?`<b>${KN(o[8])}期权第 ${o[9]}</b>`:''}<span>${fmtN(o[0])} 张</span><span>IV ${o[10]?Math.round(o[10])+'%':'—'}</span>${nz(o[3])?`<span>P/C ${o[3].toFixed(2)}</span>`:''}${nz(o[13])?`<span>价差 <i class="${o[13]>10?'hi':o[13]<=2?'lo':''}">${o[13]}%</i></span>`:''}${o[14]?`<span class="stale">数据日 ${o[14].slice(5)}</span>`:''}</span>`:''};
+const ostat=t=>{const o=O[t];return o?`<span class="ost">${o[9]?`<b>${KN(o[8])}期权第 ${o[9]}</b>`:''}<span>${fmtN(o[0])} 张</span><span>IV ${o[10]?Math.round(o[10])+'%':'—'}</span>${nz(o[3])?`<span>P/C ${o[3].toFixed(2)}</span>`:''}${o[17]?`<span>预期 ±${o[17][2]}%</span>`:''}${nz(o[13])?`<span>价差 <i class="${o[13]>10?'hi':o[13]<=2?'lo':''}">${o[13]}%</i></span>`:''}${o[14]?`<span class="stale">数据日 ${o[14].slice(5)}</span>`:''}</span>`:''};
 const IXO={SPX:['SPX','XSP'],NDX:['NDX','XND'],DJI:['DJX'],RUT:['RUT','MRUT'],OEX:['OEX'],VIX:['VIX']};
 const IXN={SPX:'标普500 指数',XSP:'迷你标普500（1/10）',NDX:'纳指100 指数',XND:'迷你纳指100（1/100）',RUT:'罗素2000 指数',MRUT:'迷你罗素2000（1/10）',DJX:'道指（1/100）',OEX:'标普100 指数',VIX:'VIX 波动率指数'};
 const KN=k=>k===2?'指数':k?'ETF':'个股';
@@ -556,11 +635,11 @@ const EDAILY=pick('SPY QQQ IWM'),EOPT=pick('DIA TLT GLD SLV HYG EEM FXI EWZ XLF 
 E.forEach(e=>e[8]=EDAILY.has(e[0])?'每日到期':'');
 const EOR=[['top5','成交前 5',e=>O[e[0]]&&O[e[0]][9]>0&&O[e[0]][9]<=5],['top20','成交前 20',e=>O[e[0]]&&O[e[0]][9]>0&&O[e[0]][9]<=20],['top50','成交前 50',e=>O[e[0]]&&O[e[0]][9]>0&&O[e[0]][9]<=50],['top200','成交前 200',e=>O[e[0]]&&O[e[0]][9]>0&&O[e[0]][9]<=200],['any','当天有成交',e=>O[e[0]]&&O[e[0]][0]>0]];
 const eW=l=>l.map(([k,n,f])=>[k,n,e=>!!O[e[0]]&&f(O[e[0]])]);
-const EG=[['eopt','期权活跃',EOR],['eivl','IV30',eW(OIVL)],['espr','买卖价差',eW(OSP)],['eexp','近期到期',eW(OEX)],['epc','多空倾向',eW(OPC)]];
+const EG=[['eopt','期权活跃',EOR],['eunu','期权异动',eW(OUNU)],['eem','预期波动',eW(OEM)],['eivl','IV30',eW(OIVL)],['espr','买卖价差',eW(OSP)],['eexp','近期到期',eW(OEX)],['epc','多空倾向',eW(OPC)]];
 const eclear=()=>{st.ecat=st.eiss=st.edir='';EG.forEach(g=>st[g[0]]='');st.eshown=50};
 const EHAY=E.map(e=>e.join(' ').toLowerCase());
 
-const st={view:'companies',q:'',idx:'all',mc:'',lmc:'',sec:new Set(),theme:-1,tr:'',fav:false,sort:'d',mode:store.get('mode','card'),shown:36,color:'sector',ecat:'',eiss:'',edir:'',eopt:'',eivl:'',espr:'',eexp:'',epc:'',escope:'',esort:'v',eshown:50,efOpen:false,orank:'',opc:'',lk:'',liv:'',lsort:'v',lpc:'',lsp:'',lshown:30};
+const st={view:'companies',q:'',idx:'all',mc:'',lmc:'',sec:new Set(),theme:-1,tr:'',fav:false,sort:'d',mode:store.get('mode','card'),shown:36,color:'chg',ecat:'',eiss:'',edir:'',eopt:'',eivl:'',espr:'',eexp:'',epc:'',escope:'',esort:'v',eshown:50,efOpen:false,orank:'',opc:'',lk:'',liv:'',lsort:'v',lpc:'',lsp:'',lunu:'',lern:'',lshown:30,zoom:-1};
 if(!['card','table','group'].includes(st.mode))st.mode='card';
 let favs=new Set(store.get('favs',[]));
 let RES=[];
@@ -575,22 +654,40 @@ $('#stats').innerHTML=[[C.length,'家公司 / 股票'],[cnt(IDX[1][2]),'标普50
   el.innerHTML=`<i></i>期权数据：美东 ${ODATE}${OD.ts?' '+OD.ts.slice(11,16):''} · 来自 Cboe，每个交易日收盘后自动更新${age>4?`<b>已经 ${age} 天没有新数据，自动更新可能出了问题</b>`:''}`;
   if(age>4)el.classList.add('old')})();
 /* ---- 点阵 ---- */
-const order=C.map((c,i)=>i).sort((a,b)=>C[a][4]-C[b][4]||a-b);
-const idxColor=c=>c[3]&4?'var(--m-dow)':c[3]&2?'var(--m-ndx)':c[3]&1?'var(--m-sp)':'var(--m-none)';
-$('#mosaic').innerHTML=order.map(i=>`<i data-i="${i}" style="--c:var(--s${C[i][4]})"></i>`).join('');
-const tiles=[];$$('#mosaic i').forEach(t=>tiles[+t.dataset.i]=t);
+/* 正方化树图：方块面积按市值，先按行业分块 */
+function wr(row,sum,short){let mx=0,mn=Infinity;for(const r of row){if(r.a>mx)mx=r.a;if(r.a<mn)mn=r.a}const s2=sum*sum,l2=short*short;return Math.max(l2*mx/s2,s2/(l2*mn))}
+function squarify(nodes,x,y,w,h){const tot=nodes.reduce((s,n)=>s+n.v,0);if(!tot||w<=0||h<=0)return[];const sc=w*h/tot,items=nodes.map(n=>({n,a:n.v*sc})),out=[];let i=0;
+  while(i<items.length){const short=Math.min(w,h);let row=[items[i]],sum=items[i].a,worst=wr(row,sum,short),j=i+1;
+    while(j<items.length){const r2=row.concat(items[j]),s2=sum+items[j].a,w2=wr(r2,s2,short);if(w2>worst)break;row=r2;sum=s2;worst=w2;j++}
+    const th=sum/short;if(w>=h){let yy=y;for(const it of row){const hh=it.a/th;out.push({n:it.n,x,y:yy,w:th,h:hh});yy+=hh}x+=th;w-=th}
+    else{let xx=x;for(const it of row){const ww=it.a/th;out.push({n:it.n,x:xx,y,w:ww,h:th});xx+=ww}y+=th;h-=th}i=j}return out}
+const tmVal=i=>C[i][8]||5;
+function tmColor(i){const o=O[C[i][0]];if(!o)return'var(--tm-na)';
+  if(st.color==='iv'){const p=Math.max(0,Math.min(100,(o[10]-15)/85*100));return `color-mix(in oklab, var(--tm-hot) ${p.toFixed(0)}%, var(--tm-mid))`}
+  if(st.color==='vol'){const p=o[0]>0?Math.max(0,Math.min(100,(Math.log10(o[0])-2)/4.5*100)):0;return `color-mix(in oklab, var(--accent) ${p.toFixed(0)}%, var(--tm-mid))`}
+  const p=Math.min(100,Math.abs(o[6])/3*100);return `color-mix(in oklab, var(${o[6]>=0?'--gain':'--loss'}) ${p.toFixed(0)}%, var(--tm-mid))`}
+let tiles=[],lastSet=null,tmW=0;
+function layoutMap(){const box=$('#mosaic');const W=box.clientWidth;if(!W)return;const H=Math.round(Math.max(300,Math.min(540,W*(W<600?0.95:0.46))));box.style.height=H+'px';tmW=W;
+  const secs=S.map((s,k)=>({k,v:C.reduce((a,c,i)=>a+(c[4]===k?tmVal(i):0),0)})).filter(x=>x.v>0&&(st.zoom<0||x.k===st.zoom)).sort((a,b)=>b.v-a.v);
+  let html='';tiles=[];
+  for(const r of squarify(secs,0,0,W,H)){const k=r.n.k,hd=r.h>40&&r.w>60?15:0,pad=1;
+    html+=`<em class="tm-sec" data-s="${k}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px">${hd?`<span>${S[k]}</span>`:''}</em>`;
+    const ids=C.map((c,i)=>i).filter(i=>C[i][4]===k).sort((a,b)=>tmVal(b)-tmVal(a));
+    for(const t of squarify(ids.map(i=>({i,v:tmVal(i)})),r.x+pad,r.y+pad+hd,r.w-2*pad,r.h-2*pad-hd)){const i=t.n.i,c=C[i],o=O[c[0]],big=t.w>44&&t.h>26,fs=Math.max(9,Math.min(22,Math.min(t.w/4.2,t.h/2.6)));
+      html+=`<i data-i="${i}" style="left:${t.x.toFixed(1)}px;top:${t.y.toFixed(1)}px;width:${Math.max(0,t.w-1).toFixed(1)}px;height:${Math.max(0,t.h-1).toFixed(1)}px;--c:${tmColor(i)};font-size:${fs.toFixed(0)}px">${big?`<b>${esc(c[0])}</b>${o&&t.h>fs*2.4?`<span>${st.color==='iv'?Math.round(o[10])+'%':st.color==='vol'?fmtN(o[0]):(o[6]>0?'+':'')+o[6].toFixed(1)+'%'}</span>`:''}`:''}</i>`}}
+  box.innerHTML=html;box.querySelectorAll('i').forEach(t=>{tiles[+t.dataset.i]=t;if(lastSet&&!lastSet.has(+t.dataset.i)){t._o=true;t.classList.add('off')}});
+  $('#tm-back').hidden=st.zoom<0;$('#tm-title').textContent=st.zoom<0?'市场地图：方块越大市值越大，颜色看当天表现。点行业名放大，点方块看详情':S[st.zoom]+'：方块越大市值越大。点方块看详情'}
+let tmT;const tmFit=()=>{clearTimeout(tmT);tmT=setTimeout(()=>{if($('#mosaic').clientWidth!==tmW)layoutMap()},120)};
+if('ResizeObserver'in window)new ResizeObserver(tmFit).observe($('#mosaic'));else addEventListener('resize',tmFit);
+$('#tm-back').addEventListener('click',()=>{st.zoom=-1;layoutMap()});
 const tip=$('#tip'),mos=$('#mosaic');
-mos.addEventListener('mouseover',e=>{const t=e.target.closest('i');if(!t)return;const c=C[t.dataset.i],b=t.getBoundingClientRect(),p=mos.parentElement.getBoundingClientRect();
-  tip.innerHTML=`<b>${esc(c[0])}</b>${esc(c[1])} · ${S[c[4]]}`;tip.style.left=Math.max(80,Math.min(p.width-80,b.left-p.left+b.width/2))+'px';tip.style.top=(b.top-p.top)+'px';tip.classList.add('on')});
+mos.addEventListener('mouseover',e=>{const t=e.target.closest('i');if(!t)return;const c=C[t.dataset.i],o=O[c[0]],b=t.getBoundingClientRect(),p=mos.parentElement.getBoundingClientRect();
+  tip.innerHTML=`<b>${esc(c[0])}</b>${esc(c[1])} · ${S[c[4]]}<br>市值 ${fmtCap(c[8])}${o?` · 涨跌 ${o[6]>0?'+':''}${o[6].toFixed(2)}% · IV30 ${Math.round(o[10])}% · 期权 ${fmtN(o[0])} 张`:''}${earnOf(c[0])?' · 财报 '+earnTxt(earnOf(c[0])):''}`;tip.style.left=Math.max(80,Math.min(p.width-80,b.left-p.left+b.width/2))+'px';tip.style.top=(b.top-p.top)+'px';tip.classList.add('on')});
 mos.addEventListener('mouseleave',()=>tip.classList.remove('on'));
-mos.addEventListener('click',e=>{const t=e.target.closest('i');tip.classList.remove('on');if(t)openDrawer(+t.dataset.i)});
-function paintLegend(){
-  $('#legend').innerHTML=st.color==='sector'
-   ?S.map((s,k)=>`<button data-s="${k}" aria-pressed="${st.sec.has(k)}"><i class="sw" style="--c:var(--s${k})"></i>${s}</button>`).join('')
-   :[['道琼斯30 成分','--m-dow'],['纳斯达克100（不在道指）','--m-ndx'],['只在标普500','--m-sp'],['不在三大指数','--m-none']].map(([l,v])=>`<span><i class="sw" style="--c:var(${v})"></i>${l}</span>`).join('')}
-$('#legend').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;toggleSec(+b.dataset.s);if(st.view!=='companies')setView('companies');else render()});
-$('#mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st.color=b.dataset.m;$$('#mode button').forEach(x=>x.setAttribute('aria-pressed',x===b));
-  tiles.forEach((t,i)=>t.style.setProperty('--c',st.color==='sector'?`var(--s${C[i][4]})`:idxColor(C[i])));paintLegend()});
+mos.addEventListener('click',e=>{const s=e.target.closest('.tm-sec');const t=e.target.closest('i');tip.classList.remove('on');if(t)openDrawer(+t.dataset.i);else if(s&&st.zoom<0){st.zoom=+s.dataset.s;layoutMap()}});
+function paintLegend(){const g=st.color==='iv'?['IV 15%','IV 100%','linear-gradient(90deg,var(--tm-mid),var(--tm-hot))']:st.color==='vol'?['成交少','成交多','linear-gradient(90deg,var(--tm-mid),var(--accent))']:['−3%','+3%','linear-gradient(90deg,var(--loss),var(--tm-mid),var(--gain))'];
+  $('#legend').innerHTML=`<span class="tm-scale"><small>${g[0]}</small><i style="background:${g[2]}"></i><small>${g[1]}</small></span><span class="mu">灰色：没有期权数据。数据日 ${ODATE}</span>`}
+$('#mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st.color=b.dataset.m;$$('#mode button').forEach(x=>x.setAttribute('aria-pressed',x===b));layoutMap();paintLegend()});
 
 /* ---- 筛选逻辑 ---- */
 function pass(i,skip){const c=C[i];
@@ -607,13 +704,15 @@ function facet(skip,test){let n=0;for(let i=0;i<C.length;i++)if(pass(i,skip)&&te
 function toggleSec(k){st.sec.has(k)?st.sec.delete(k):st.sec.add(k);st.shown=36}
 function clearAll(){OG.forEach(g=>st[g[0]]='');st.mc='';st.idx='all';st.sec.clear();st.theme=-1;st.tr='';st.fav=false;st.shown=36;setQ('')}
 const nActive=()=>(st.idx!=='all')+(st.mc?1:0)+st.sec.size+(st.theme>=0)+(st.tr?1:0)+(st.fav?1:0)+OG.filter(g=>st[g[0]]).length;
-const OSORT={v:0,iv:10,spr:13,oi:11};
+const OSORT={v:0,iv:10,spr:13,oi:11,em:-1,earn:-2};
 function matchCompanies(){let r=[];for(let i=0;i<C.length;i++)if(pass(i))r.push(i);
   if(st.q){const sc=i=>{const t=C[i][0].toLowerCase();return t===st.q?0:t.startsWith(st.q)?1:(C[i][1]+C[i][2]).toLowerCase().includes(st.q)?2:3};r.sort((a,b)=>sc(a)-sc(b)||a-b)}
   else if(st.sort==='a')r.sort((a,b)=>C[a][0]<C[b][0]?-1:1);
   else if(st.sort==='s')r.sort((a,b)=>C[a][4]-C[b][4]||a-b);
   else if(st.sort==='mc')r.sort((a,b)=>(C[b][8]||0)-(C[a][8]||0));
   else if(st.sort==='mca')r.sort((a,b)=>(C[a][8]||1e9)-(C[b][8]||1e9));
+  else if(st.sort==='em')r.sort((a,b)=>((O[C[b][0]]||[])[17]||[0,0,-1])[2]-((O[C[a][0]]||[])[17]||[0,0,-1])[2]);
+  else if(st.sort==='earn'){const g=i=>{const n=earnDays(C[i][0]);return n==null||n<0?1e9:n};r.sort((a,b)=>g(a)-g(b)||a-b)}
   else if(OSORT[st.sort]!=null){const k=OSORT[st.sort],g=i=>{const o=O[C[i][0]];return o&&nz(o[k])?(k===13?-o[k]:o[k]):-1e9};r.sort((a,b)=>g(b)-g(a)||a-b)}
   return r}
 const etfPass=(e,j,skip)=>(!st.q||EHAY[j].includes(st.q))&&(skip==='ecat'||!st.ecat||e[2]===st.ecat)&&(skip==='eiss'||!st.eiss||e[5]===st.eiss)&&(skip==='edir'||!st.edir||e[6]===st.edir)&&ePassG(e,skip);
@@ -624,7 +723,7 @@ const matchIdx=()=>I.filter(r=>!st.q||r.join(' ').toLowerCase().includes(st.q));
 /* ---- 搜索 ---- */
 const q=$('#q');let qt;
 function setQ(v){q.value=v;st.q=v.trim().toLowerCase();$('#q-clear').hidden=!v;$('#kbd').hidden=!!v}
-q.addEventListener('input',()=>{clearTimeout(qt);qt=setTimeout(()=>{setQ(q.value);st.shown=36;if(st.q&&['guide','audit','trade'].includes(st.view))setView('companies');else render()},90)});
+q.addEventListener('input',()=>{clearTimeout(qt);qt=setTimeout(()=>{setQ(q.value);st.shown=36;if(st.q&&['guide','audit','trade','watch'].includes(st.view))setView('companies');else render()},90)});
 $('#q-clear').addEventListener('click',()=>{setQ('');render();q.focus()});
 document.addEventListener('keydown',e=>{
   const typing=/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName),dOn=$('#drawer').classList.contains('on');
@@ -634,13 +733,24 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---- 栏目 ---- */
-const VIEWS=['companies','etf','indices','trade','guide','audit'];
+const VIEWS=['companies','etf','indices','trade','watch','guide','audit'];
 function moveInd(){const b=$('#tab-'+st.view),ind=$('#ind');ind.style.width=b.offsetWidth+'px';ind.style.transform=`translateX(${b.offsetLeft}px)`}
+const URLK=['idx','mc','tr','sort','ecat','eiss','esort','lk','liv','lsp','lpc','lmc','lunu','lern','lsort','wsort'];
+const DEF={};
+function urlKeys(){return [...URLK,...OG.map(g=>g[0]),...EG.map(g=>g[0])]}
+function writeURL(){const p=new URLSearchParams();for(const k of urlKeys()){if(st[k]!==DEF[k]&&st[k]!=null&&st[k]!=='')p.set(k,st[k])}
+  if(st.q)p.set('q',st.q);if(st.sec.size)p.set('sec',[...st.sec].join('.'));if(st.theme>=0)p.set('th',st.theme);if(st.fav)p.set('fav','1');
+  const h='#'+st.view+(p.toString()?'?'+p.toString():'');if(location.hash!==h){try{history.replaceState(null,'',h)}catch(e){}}}
+function readURL(){const h=decodeURIComponent(location.hash.slice(1)),i=h.indexOf('?'),v=i<0?h:h.slice(0,i),p=new URLSearchParams(i<0?'':h.slice(i+1));
+  for(const k of urlKeys())st[k]=p.has(k)?p.get(k):DEF[k];
+  st.sec=new Set((p.get('sec')||'').split('.').filter(x=>x!=='').map(Number));st.theme=p.has('th')?+p.get('th'):-1;st.fav=p.get('fav')==='1';
+  if(p.has('q'))setQ(p.get('q'));return v||'companies'}
+const vt=fn=>{if(!document.startViewTransition||reduce||document.hidden)return fn();let done=false;const run=()=>{if(!done){done=true;fn()}};
+  try{const t=document.startViewTransition(run);t.ready.catch(()=>{});t.finished.catch(()=>{});t.updateCallbackDone.catch(()=>{});setTimeout(run,350)}catch(e){run()}};
 function setView(v,fromHash){st.view=VIEWS.includes(v)?v:'companies';st.shown=36;
-  if(!fromHash){try{history.replaceState(null,'','#'+st.view)}catch(e){}}
-  render();const bar=$('#bar');if(!fromHash&&bar.getBoundingClientRect().top<=1)window.scrollTo(0,bar.offsetTop)}
+  if(fromHash)render();else vt(render);const bar=$('#bar');if(!fromHash&&bar.getBoundingClientRect().top<=1)window.scrollTo(0,bar.offsetTop)}
 $('#views').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
-addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(v!==st.view)setView(v,true)});
+addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(h&&h.split('?')[0]!==st.view){readURL();setView(h.split('?')[0],true)}});
 addEventListener('resize',moveInd);
 
 /* ---- 渲染工具 ---- */
@@ -648,7 +758,7 @@ function hl(s){s=String(s);if(!st.q)return esc(s);const i=s.toLowerCase().indexO
 const badges=f=>f?((f&1?'<span class="bd sp">标普500</span>':'')+(f&2?'<span class="bd ndx">纳指100</span>':'')+(f&4?'<span class="bd dow">道指30</span>':'')):'<span class="bd none">指数外</span>';
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></svg>';
 const starBtn=(t,cls)=>`<button class="star ${cls||''}" data-fav="${esc(t)}" aria-pressed="${favs.has(t)}" aria-label="自选 ${esc(t)}">${STAR}</button>`;
-const tags=c=>mcBadge(c)+(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
+const tags=c=>mcBadge(c)+earnBadge(c[0])+unuBadge(c[0])+(HEAVY.has(c[0])?'<span class="tg">权重股</span>':'')+(O[c[0]]&&O[c[0]][9]>0&&O[c[0]][9]<=50?'<span class="tg">期权活跃</span>':'');
 const sw=k=>`<i class="sw" style="--c:var(--s${k})"></i>`;
 function cardHTML(i,n){const c=C[i];return `<div class="card" role="button" tabindex="0" data-i="${i}" style="--n:${n}"><div class="card-top"><span class="tk">${hl(c[0])}</span><span class="badges">${badges(c[3])}</span>${starBtn(c[0])}</div><div class="nm">${hl(c[1])}${c[1]!==c[2]?`<span>${hl(c[2])}</span>`:''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${hl(c[5])}${tags(c)}</div>${ostat(c[0])}<p class="desc">${hl(c[6])}</p></div>`}
 const rowHTML=i=>{const c=C[i];return `<tr data-i="${i}" tabindex="0"><td>${starBtn(c[0])}</td><td class="nw"><span class="tk">${hl(c[0])}</span></td><td class="nmc">${hl(c[1])}${c[1]!==c[2]?`<small>${hl(c[2])}</small>`:''}</td><td class="nw"><span class="badges" style="justify-content:flex-start">${badges(c[3])}</span></td><td class="nw"><span class="sec">${sw(c[4])}${S[c[4]]}</span></td><td>${hl(c[5])}</td><td class="num nw">${fmtCap(c[8])}</td>${ocells(c[0])}</tr>`};
@@ -659,11 +769,11 @@ function sideHTML(){
   return `<div class="side-head"><span>筛选公司</span><button class="ib" id="sheet-x" aria-label="关闭筛选">×</button></div>
   <div class="fg" role="radiogroup" aria-label="所属指数"><div class="fg-h"><b>所属指数</b><span>单选</span></div>
     ${IDX.map(([k,l,f])=>opt('radio','idx',k,l,facet('idx',f),st.idx===k)).join('')}</div>
-  <div class="fg" role="radiogroup" aria-label="市值"><div class="fg-h"><b>市值</b>${st.mc?'<button data-f="mcclear">清除</button>':'<span>单选</span>'}</div>
+  <div class="fg" role="radiogroup" aria-label="市值"><div class="fg-h"><b>市值${qk('市值')}</b>${st.mc?'<button data-f="mcclear">清除</button>':'<span>单选</span>'}</div>
     ${MCT.map(([k,l,d,f])=>opt('radio','mc',k,`${l}<small class="mcd">${d}</small>`,facet('mc',c=>!!c[8]&&f(c[8])),st.mc===k)).join('')}
     <p>按纳斯达克网站的市值。市值越小，期权通常成交越少、买卖价差越宽、财报跳空越大。</p></div>
   <div class="opt-zone"><div class="oz-h"><b>期权数据筛选</b><span>Cboe 延时数据 · ${ODATE}</span></div>
-  ${OG.map(([key,name,list,tip])=>`<div class="fg" role="radiogroup" aria-label="${name}"><div class="fg-h"><b>${name}</b>${st[key]?`<button data-f="oclear" data-v="${key}">清除</button>`:'<span>单选</span>'}</div>
+  ${OG.map(([key,name,list,tip])=>`<div class="fg" role="radiogroup" aria-label="${name}"><div class="fg-h"><b>${name}${GLOSS[name]?qk(name):''}</b>${st[key]?`<button data-f="oclear" data-v="${key}">清除</button>`:'<span>单选</span>'}</div>
     ${list.map(([k,l,f])=>opt('radio',key,k,l,facet(key,c=>!!O[c[0]]&&f(O[c[0]])),st[key]===k)).join('')}<p>${tip}</p></div>`).join('')}
   <p class="oz-n">本站 ${C.filter(c=>O[c[0]]).length} 家公司有期权数据；包括库外个股在内的完整成交榜见“期权”栏目。</p></div>
   <div class="fg" role="group" aria-label="交易视角"><div class="fg-h"><b>交易视角</b>${st.tr?'<button data-f="trclear">清除</button>':'<span>单选</span>'}</div>
@@ -697,21 +807,21 @@ function listHTML(res){
 let io;
 function render(){
   $$('#views button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===st.view));
-  RES=matchCompanies();const set=new Set(RES);
-  tiles.forEach((t,i)=>{const o=!set.has(i);if(t._o!==o){t._o=o;t.classList.toggle('off',o)}});
+  RES=matchCompanies();const set=new Set(RES);lastSet=set;
+  tiles.forEach((t,i)=>{if(!t)return;const o=!set.has(i);if(t._o!==o){t._o=o;t.classList.toggle('off',o)}});
   [['companies',RES.length],['etf',matchETF().length],['indices',matchIdx().length]].forEach(([v,n])=>{const b=$('#tab-'+v);let s=b.querySelector('small');if(st.q){if(!s){s=document.createElement('small');b.appendChild(s)}s.textContent=n}else if(s)s.remove()});
-  moveInd();paintLegend();
+  moveInd();writeURL();
   const m=$('#main'),old=$('#side'),sheetOpen=old&&old.classList.contains('on'),sy=old?old.scrollTop:0;if(io){io.disconnect();io=null}
   if(st.view==='companies'){
     m.innerHTML=`<div class="layout"><aside class="side${sheetOpen?' on':''}" id="side" aria-label="筛选">${sideHTML()}</aside><section id="results">
       <div class="res-head"><button class="filter-btn" id="open-sheet">筛选${nActive()?`<small>${nActive()}</small>`:''}</button><p class="count" aria-live="polite">共 <b>${RES.length}</b> 家公司</p>
       <div class="res-tools"><span class="toggle" id="vmode">${[['card','卡片'],['table','列表'],['group','分组']].map(([k,l])=>`<button data-m="${k}" aria-pressed="${st.mode===k}">${l}</button>`).join('')}</span>
-      <label for="sort" hidden>排序</label><select class="sort" id="sort"${st.q||st.mode==='group'?' disabled':''}><option value="d">默认顺序</option><option value="a">代码 A→Z</option><option value="s">按行业</option><option value="mc">市值 大→小</option><option value="mca">市值 小→大</option><option value="v">期权成交量 高→低</option><option value="iv">IV30 高→低</option><option value="spr">买卖价差 小→大</option><option value="oi">未平仓量 高→低</option></select></div></div>
+      <label for="sort" hidden>排序</label><select class="sort" id="sort"${st.q||st.mode==='group'?' disabled':''}><option value="d">默认顺序</option><option value="a">代码 A→Z</option><option value="s">按行业</option><option value="mc">市值 大→小</option><option value="mca">市值 小→大</option><option value="earn">财报日 近→远</option><option value="em">预期波动 大→小</option><option value="v">期权成交量 高→低</option><option value="iv">IV30 高→低</option><option value="spr">买卖价差 小→大</option><option value="oi">未平仓量 高→低</option></select></div></div>
       ${appliedHTML()}<div id="list">${listHTML(RES)}</div></section></div>`;
     $('#sort').value=st.sort;$('#side').scrollTop=sy;
     const more=$('#more');if(more&&'IntersectionObserver'in window){io=new IntersectionObserver(en=>{if(en[0].isIntersecting)showMore()},{rootMargin:'500px'});io.observe(more)}
   }else{if(sheetOpen)$('#scrim').classList.remove('on');
-    m.innerHTML=st.view==='etf'?etfHTML():st.view==='indices'?indicesHTML():st.view==='trade'?tradeHTML():st.view==='guide'?GUIDE:AUDIT;if(st.view==='trade'){initTrade();tick()}}
+    m.innerHTML=st.view==='etf'?etfHTML():st.view==='indices'?indicesHTML():st.view==='trade'?tradeHTML():st.view==='watch'?watchHTML():st.view==='guide'?GUIDE:AUDIT;if(st.view==='trade'){initTrade();tick()}}
 }
 function showMore(){const more=$('#more');if(!more)return;const from=st.shown;st.shown+=36;
   $('#rows').insertAdjacentHTML('beforeend',RES.slice(from,st.shown).map((i,n)=>st.mode==='table'?rowHTML(i):cardHTML(i,Math.min(n,14))).join(''));
@@ -724,9 +834,9 @@ function etfHTML(){
   const grow=(label,key,list)=>{const b=matchETF(key);return `<div class="frow"><b>${label}</b><div class="themes"><button class="chip" data-e="${key}" data-v="" aria-pressed="${!st[key]}">全部<small>${b.length}</small></button>${list.map(([k,l,f])=>{const n=b.filter(f).length;return `<button class="chip${!n&&st[key]!==k?' zero':''}" data-e="${key}" data-v="${k}" aria-pressed="${st[key]===k}">${l}<small>${n}</small></button>`}).join('')}</div></div>`};
   let list=matchETF();const act=st.ecat||st.eiss||st.edir||EG.some(g=>st[g[0]])||st.q;
   const erow=e=>{const o=O[e[0]],sp=o&&nz(o[13])?o[13]:null;
-    return `<article class="idx etfc"><div class="idx-h"><b>${hl(e[3]||e[1])}</b><span class="tk">${hl(e[0])}</span></div><div class="idx-en">${hl(e[1])}</div>${e[4]?`<p>${hl(e[4])}</p>`:''}
+    return `<article class="idx etfc"><div class="idx-h"><b>${hl(e[3]||e[1])}</b><span class="tk">${hl(e[0])}</span>${starBtn(e[0])}</div>${unuBadge(e[0])?`<div class="ebadges">${unuBadge(e[0])}</div>`:''}<div class="idx-en">${hl(e[1])}</div>${e[4]?`<p>${hl(e[4])}</p>`:''}
     <dl><dt>类别</dt><dd>${esc(e[2])}</dd><dt>发行方</dt><dd>${esc(e[5])}</dd>${o?`<dt>现价</dt><dd>$${o[5]}　<span class="${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</span></dd><dt>到期日</dt><dd>${o[12]>=5?'每个交易日都有到期':o[12]?`7 天内有 ${o[12]} 个到期日`:'7 天内没有到期日'}</dd>`:''}</dl>
-    ${o?`<div class="eopt"><b>期权<small>Cboe · ${ODATE}${o[14]?` · 这只的数据停在 ${o[14].slice(5)}`:''}</small></b><div class="estat"><div><b>${o[9]?'第 '+o[9]:'—'}</b><span>成交排名</span></div><div><b>${fmtN(o[0])}</b><span>成交（张）</span></div><div><b>${fmtN(o[11])}</b><span>未平仓（张）</span></div><div><b>${o[10]?o[10].toFixed(1)+'%':'—'}</b><span>IV30</span></div><div><b>${nz(o[3])?o[3].toFixed(2):'—'}</b><span>Put/Call</span></div><div><b class="${sp==null?'':sp>10?'hi':sp<=2?'lo':''}">${sp==null?'—':sp+'%'}</b><span>平值价差</span></div></div></div>`:'<p class="d-sm">这天没有抓到它的期权数据。</p>'}
+    ${o?`<div class="eopt"><b>期权<small>Cboe · ${ODATE}${o[14]?` · 这只的数据停在 ${o[14].slice(5)}`:''}</small></b><div class="estat"><div><b>${o[9]?'第 '+o[9]:'—'}</b><span>成交排名</span></div><div><b>${fmtN(o[0])}</b><span>成交（张）</span></div><div><b>${fmtN(o[11])}</b><span>未平仓${qk('未平仓')}</span></div><div><b>${o[10]?o[10].toFixed(1)+'%':'—'}</b><span>IV30${qk('IV30')}</span></div><div><b>${nz(o[3])?o[3].toFixed(2):'—'}</b><span>Put/Call${qk('P/C')}</span></div><div><b class="${sp==null?'':sp>10?'hi':sp<=2?'lo':''}">${sp==null?'—':sp+'%'}</b><span>平值价差${qk('平值价差')}</span></div></div>${keyline(o)}</div>`:'<p class="d-sm">这天没有抓到它的期权数据。</p>'}
     <div class="elinks">${chainLinks(e[0],1)}</div></article>`};
   const flat=st.esort!=='d';
   if(flat){const k=OSORT[st.esort],g=e=>{const o=O[e[0]];return o&&nz(o[k])?(k===13?-o[k]:o[k]):-1e9};list=list.slice().sort((a,b)=>g(b)-g(a))}
@@ -737,6 +847,20 @@ function etfHTML(){
   (list.length?flat?`<div class="idx-grid">${list.slice(0,st.eshown).map(erow).join('')}</div>${list.length>st.eshown?`<button class="more" id="emore">再显示 100 只（还有 ${list.length-st.eshown} 只）</button>`:''}`:cats.map(c=>{let r=list.filter(e=>e[2]===c);if(!r.length)return'';const n=r.length;r=r.slice().sort((a,b)=>(O[b[0]]?O[b[0]][0]:-1)-(O[a[0]]?O[a[0]][0]:-1));
     return `<h2>${esc(c)}<small>${n} 只</small></h2>${/波动率/.test(c)?'<p class="note">波动率产品持有的是 VIX 期货，要不断展期，长期持有净值会被磨损，只适合短线。</p>':''}<div class="idx-grid">${r.slice(0,12).map(erow).join('')}</div>${n>12?`<button class="more" data-ecatall="${esc(c)}">看这一类全部 ${n} 只（按成交量排）</button>`:''}`}).join(''):`<div class="empty"><b>没有符合条件的 ETF</b>换个关键词，或者放宽上面的条件。<br><button id="etf-clear">清除全部条件</button></div>`)}
 
+/* ---- 自选看板 ---- */
+function watchHTML(){const list=[...favs].filter(t=>CI.has(t)||ETFSET.has(t));
+  if(!list.length){const sug=Object.entries(O).filter(([t,o])=>o[8]!==2&&o[9]>0&&o[9]<=8).sort((a,b)=>a[1][8]-b[1][8]||a[1][9]-b[1][9]).map(x=>x[0]);
+    return `<div class="empty"><b>还没有自选</b>在公司或 ETF 卡片右上角点星标，就会出现在这里：期权数据、财报日、预期波动和走势一屏看完，适合每天开盘前过一遍。<br><span class="wsug">${sug.map(t=>`<button class="pill" data-fav="${t}"><b>${t}</b>加入自选</button>`).join('')}</span></div>`}
+  const rows=list.map(t=>{const o=O[t],i=CI.has(t)?CI.get(t):-1,c=i>=0?C[i]:null,e=c?null:E.find(x=>x[0]===t);return {t,o,i,c,e,days:earnDays(t)}});
+  const k=st.wsort||'add',val=r=>k==='v'?(r.o?r.o[0]:-1):k==='iv'?(r.o?r.o[10]:-1):k==='em'?(r.o&&r.o[17]?r.o[17][2]:-1):k==='chg'?(r.o?Math.abs(r.o[6]):-1):k==='earn'?(r.days==null||r.days<0?-1e9:-r.days):0;
+  if(k!=='add')rows.sort((a,b)=>val(b)-val(a));
+  return `<div class="res-head"><p class="count">自选 <b>${list.length}</b> 只</p><div class="res-tools"><label for="wsort" hidden>排序</label><select class="sort" id="wsort">${[['add','按加入顺序'],['earn','财报日 近→远'],['v','期权成交 高→低'],['iv','IV30 高→低'],['em','预期波动 大→小'],['chg','涨跌幅 大→小']].map(([v,l])=>`<option value="${v}"${k===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="tbl-wrap"><table class="lbt watch"><thead><tr><th></th><th>代码</th><th>名称</th><th class="num">现价</th><th class="num">涨跌</th><th class="num">期权成交</th><th>走势</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th class="num">预期波动</th><th>财报 / 异动</th><th>关键价位</th></tr></thead><tbody>
+  ${rows.map(({t,o,i,c,e})=>`<tr><td>${starBtn(t)}</td><td class="nw"><button class="lbtk" ${i>=0?`data-i="${i}"`:`data-etf="${t}"`}>${t}</button>${e?'<span class="tg">ETF</span>':''}</td><td class="nmc">${esc(c?c[1]:(e[3]||e[1]))}${c&&c[8]?`<small>${fmtCap(c[8])}</small>`:''}</td>
+   <td class="num">${o?'$'+o[5]:'—'}</td><td class="num ${o&&o[6]>=0?'up':'dn'}">${o?(o[6]>0?'+':'')+o[6].toFixed(2)+'%':'—'}</td><td class="num">${o?fmtN(o[0]):'—'}</td><td data-spark-mini="${t}">${sparkHTML(t,1)}</td>
+   <td class="num">${o&&o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${o&&nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${o&&nz(o[13])?o[13]+'%':'—'}</td><td class="num">${o&&o[17]?'±'+o[17][2]+'%':'—'}</td>
+   <td class="nw">${earnBadge(t)}${unuBadge(t)}</td><td class="nw small">${o&&o[19]?`C $${o[19][0]} · P $${o[19][2]}`:'—'}${o&&o[20]?` · 痛点 $${o[20][1]}`:''}</td></tr>`).join('')}</tbody></table></div>
+  <p class="d-sm">自选存在这台设备的浏览器里，换设备或清除浏览器数据后要重新添加。“关键价位”里 C 是 Call 墙、P 是 Put 墙。</p>`}
 /* ---- 指数 ---- */
 const tlinks=s=>esc(s).replace(/\b[A-Z]{2,5}\b/g,t=>ETFSET.has(t)?`<button class="tlink" data-etf="${t}">${t}</button>`:t);
 function compHTML(k,n){const [key,name,f]=IDX[k],m=C.filter(f),by=S.map((s,j)=>[j,m.filter(c=>c[4]===j).length]).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]);
@@ -757,17 +881,17 @@ function favToggle(t){favs.has(t)?favs.delete(t):favs.add(t);store.set('favs',[.
 function goETF(t){eclear();setQ(t);setView('etf')}
 $('#main').addEventListener('click',e=>{const T=e.target;let b;
   if(b=T.closest('[data-fav]')){const t=b.dataset.fav;favToggle(t);
-    if(st.fav)render();else{$$('#main [data-fav]').forEach(x=>{if(x.dataset.fav===t)x.setAttribute('aria-pressed',favs.has(t))});const s=$('#side');if(s){const y=s.scrollTop;s.innerHTML=sideHTML();s.scrollTop=y}}return}
+    if(st.fav||st.view==='watch')render();else{$$('#main [data-fav]').forEach(x=>{if(x.dataset.fav===t)x.setAttribute('aria-pressed',favs.has(t))});const s=$('#side');if(s){const y=s.scrollTop;s.innerHTML=sideHTML();s.scrollTop=y}}return}
   if(b=T.closest('[data-f]')){const f=b.dataset.f,v=b.dataset.v;
     if(f==='idx')st.idx=v;else if(f==='sec')toggleSec(+v);else if(f==='theme')st.theme=st.theme===+v?-1:+v;else if(f==='tr')st.tr=st.tr===v?'':v;else if(f==='trclear')st.tr='';else if(f==='fav')st.fav=!st.fav;else if(f==='mc')st.mc=st.mc===v?'':v;else if(f==='mcclear')st.mc='';else if(f==='oclear')st[v]='';else if(OG.some(g=>g[0]===f))st[f]=st[f]===v?'':v;else if(f==='secclear')st.sec.clear();else if(f==='themeclear')st.theme=-1;
-    st.shown=36;render();return}
+    st.shown=36;vt(render);return}
   if(b=T.closest('[data-rm]')){const f=b.dataset.rm;if(f==='q')setQ('');else if(f==='idx')st.idx='all';else if(f==='sec')st.sec.delete(+b.dataset.v);else if(f==='theme')st.theme=-1;else if(f==='tr')st.tr='';else if(f==='mc')st.mc='';else if(OG.some(g=>g[0]===f))st[f]='';else st.fav=false;st.shown=36;render();return}
   if(T.closest('#clear-all,#empty-clear')){clearAll();render();return}
   if(b=T.closest('#vmode button')){st.mode=b.dataset.m;store.set('mode',st.mode);st.shown=36;render();return}
   if(T.closest('#more')){showMore();return}
   if(T.closest('#open-sheet')){$('#side').classList.add('on');$('#scrim').classList.add('on');return}
   if(T.closest('#sheet-x,#sheet-ok')){closeSheet();return}
-  if(b=T.closest('[data-e]')){st[b.dataset.e]=st[b.dataset.e]===b.dataset.v?'':b.dataset.v;st.eshown=50;render();return}
+  if(b=T.closest('[data-e]')){st[b.dataset.e]=st[b.dataset.e]===b.dataset.v?'':b.dataset.v;st.eshown=50;vt(render);return}
   if(T.closest('#ef-toggle')){st.efOpen=!st.efOpen;render();return}
   if(T.closest('#etf-clear')){eclear();setQ('');render();return}
   if(T.closest('#emore')){st.eshown+=100;render();return}
@@ -783,7 +907,7 @@ $('#main').addEventListener('click',e=>{const T=e.target;let b;
   if(T.closest('#lb-more')){st.lshown+=50;$('#lb').innerHTML=lbHTML();return}
   if(b=T.closest('[data-lt]')){const t=b.dataset.lt;if(IXN[t]){setQ('');setView('indices')}else if(CI.has(t))openDrawer(CI.get(t));else goETF(t);return}
   if(b=T.closest('[data-i]'))openDrawer(+b.dataset.i)});
-$('#main').addEventListener('change',e=>{const t=e.target;if(t.id==='sort'){st.sort=t.value;render()}else if(t.id==='esort'){st.esort=t.value;st.eshown=50;render()}else if(t.id==='lsort'){st.lsort=t.value;st.lshown=30;$('#lb').innerHTML=lbHTML()}});
+$('#main').addEventListener('change',e=>{const t=e.target;if(t.id==='sort'){st.sort=t.value;render()}else if(t.id==='esort'){st.esort=t.value;st.eshown=50;render()}else if(t.id==='wsort'){st.wsort=t.value;render()}else if(t.id==='lsort'){st.lsort=t.value;st.lshown=30;$('#lb').innerHTML=lbHTML()}});
 $('#main').addEventListener('input',e=>{const t=e.target;
   if(t.dataset.leg){LEGS[+t.dataset.leg][+t.dataset.f]=parseFloat(t.value)||0;drawPay()}
   else if(t.id==='p-str'||t.id==='p-s')setLegs();else if(t.id==='p-n')drawPay();
@@ -794,6 +918,29 @@ function closeSheet(){const s=$('#side');if(s)s.classList.remove('on');if(!$('#d
 
 /* ---- 详情抽屉 ---- */
 let lastFocus=null,hot=null,cur=-1;
+function keyline(o){const w=o[19],m=o[20],x=[];
+  if(o[17])x.push(`<span>预期波动${qk('预期波动')} <b>${emTxt(o[17])}</b></span>`);
+  if(w)x.push(`<span>Call 墙${qk('Call 墙')} <b>$${w[0]}</b></span><span>Put 墙${qk('Put 墙')} <b>$${w[2]}</b></span>`);
+  if(m)x.push(`<span>最大痛点${qk('最大痛点')} <b>$${m[1]}</b>（${md(m[0])}）</span>`);
+  return x.length?`<div class="keyline">${x.join('')}</div>`:''}
+function obox2(t){const o=O[t];if(!o)return'';const e=o[16],w=o[19],m=o[20],u=o[21],rows=[];
+  if(e)rows.push(`<div class="kv2"><span>财报</span><b>${earnTxt(e)}</b><small>${o[18]?`财报后预期波动${qk('财报后预期波动')} ${emTxt(o[18])}`:'财报后的到期日还没有足够报价'}</small></div>`);
+  if(o[17])rows.push(`<div class="kv2"><span>预期波动${qk('预期波动')}</span><b>±${o[17][2]}%</b><small>到 ${md(o[17][0])}，平值跨式 $${o[17][1]}，对应 $${(o[5]-o[17][1]).toFixed(2)} ~ $${(o[5]+o[17][1]).toFixed(2)}</small></div>`);
+  if(w)rows.push(`<div class="kv2"><span>Call 墙${qk('Call 墙')}</span><b>$${w[0]}</b><small>未平仓 ${fmtN(w[1])} 张，现价上方 ${((w[0]/o[5]-1)*100).toFixed(1)}%</small></div><div class="kv2"><span>Put 墙${qk('Put 墙')}</span><b>$${w[2]}</b><small>未平仓 ${fmtN(w[3])} 张，现价下方 ${((1-w[2]/o[5])*100).toFixed(1)}%</small></div>`);
+  if(m)rows.push(`<div class="kv2"><span>最大痛点${qk('最大痛点')}</span><b>$${m[1]}</b><small>${md(m[0])} 月度到期</small></div>`);
+  if(u)rows.push(`<div class="kv2${isUnu(o)?' hot':''}"><span>最大异动合约${qk('异动')}</span><b>${md(u[0])} $${u[2]} ${u[1]==='C'?'Call':'Put'}</b><small>成交 ${fmtN(u[3])} 张，未平仓 ${fmtN(u[4])} 张${o[22]>1?`；共 ${o[22]} 个合约成交超过未平仓`:''}</small></div>`);
+  return rows.length?`<div class="kv2s">${rows.join('')}</div>`:''}
+/* ---- 走势小图：每天收盘后记一笔，存在 hist.json ---- */
+let HIST=null,HISTERR=false;
+fetch('hist.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(h=>{HIST=h;if(!h)HISTERR=true;$$('[data-spark]').forEach(el=>el.innerHTML=sparkHTML(el.dataset.spark))}).catch(()=>{HISTERR=true;$$('[data-spark]').forEach(el=>el.innerHTML=sparkHTML(el.dataset.spark))});
+function spark(arr,w,h,cls){const pts=arr.map((v,i)=>[i,v]).filter(p=>p[1]!=null);if(pts.length<2)return'';const vs=pts.map(p=>p[1]),lo=Math.min(...vs),hi=Math.max(...vs),n=arr.length-1||1,sy=v=>hi===lo?h/2:h-2-(v-lo)/(hi-lo)*(h-4);
+  const d=pts.map((p,k)=>(k?'L':'M')+(p[0]/n*(w-4)+2).toFixed(1)+' '+sy(p[1]).toFixed(1)).join('');const L=pts[pts.length-1];
+  return `<svg class="spark ${cls||''}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d}"/><circle cx="${(L[0]/n*(w-4)+2).toFixed(1)}" cy="${sy(L[1]).toFixed(1)}" r="2.2"/></svg>`}
+function sparkHTML(t,mini){if(!HIST)return mini?'':`<p class="d-sm">${HISTERR?'暂时没有走势记录：每天自动更新后会记一笔，在线网址上才读得到。':'正在读取走势数据…'}</p>`;
+  const v=HIST.v[t],iv=HIST.i[t],n=HIST.d.length;if(!v||v.filter(x=>x!=null).length<2)return mini?'':`<p class="d-sm">每个交易日收盘后记一笔，已经记了 ${n} 天，攒够两天后显示走势。</p>`;
+  if(mini)return spark(v.slice(-20),72,22,'mini');
+  const fm=a=>a.filter(x=>x!=null);const vv=fm(v),ii=fm(iv||[]);
+  return `<div class="sp2"><div><span>期权成交（${vv.length} 天）</span>${spark(v.slice(-20),220,46)}<small>最低 ${fmtN(Math.min(...vv))} · 最高 ${fmtN(Math.max(...vv))}</small></div>${ii.length>=2?`<div><span>IV30（${ii.length} 天）</span>${spark((iv||[]).slice(-20),220,46,'iv')}<small>最低 ${Math.min(...ii)}% · 最高 ${Math.max(...ii)}%</small></div>`:''}</div>`}
 function obox(t){const o=O[t];if(!o)return '<p class="d-sm">这天没有抓到它的期权数据，可能没有上市期权或期权很冷门。</p>';
   const iv='';
   const pc=!nz(o[3])?'':o[3]>1?'当天 Put 成交多于 Call，偏防守或看空。':o[3]<.7?'当天 Call 成交明显多于 Put，偏进攻或看涨。':'当天 Put 和 Call 成交大致均衡。';
@@ -804,18 +951,18 @@ function openDrawer(i){const c=C[i],d=$('#drawer');if(!d.classList.contains('on'
   const rel=C.map((x,j)=>j).filter(j=>j!==i&&C[j][4]===c[4]).sort((a,b)=>(C[b][5]===c[5])-(C[a][5]===c[5])||a-b).slice(0,8);
   const etfs=[...(c[3]&1?[[SECT_ETF[c[4]],S[c[4]]+'板块'],['SPY','标普500']]:[]),...(c[3]&2?[['QQQ','纳指100']]:[]),...(c[3]&4?[['DIA','道指30']]:[])];
   const th=TH.map((t,k)=>t.set.has(i)?k:-1).filter(k=>k>=0);
-  d.innerHTML=`<div class="d-bar"><button class="ib" id="d-prev" aria-label="上一家"${pos>0?'':' disabled'}>‹</button><button class="ib" id="d-next" aria-label="下一家"${pos>=0&&pos<RES.length-1?'':' disabled'}>›</button><span class="sp1">${pos>=0?`${pos+1} / ${RES.length}`:''}</span>${starBtn(c[0],'ib')}<button class="ib" id="d-x" aria-label="关闭">×</button></div>
+  d.innerHTML=`<div class="d-handle" aria-hidden="true"></div><div class="d-bar"><button class="ib" id="d-prev" aria-label="上一家"${pos>0?'':' disabled'}>‹</button><button class="ib" id="d-next" aria-label="下一家"${pos>=0&&pos<RES.length-1?'':' disabled'}>›</button><span class="sp1">${pos>=0?`${pos+1} / ${RES.length}`:''}</span>${starBtn(c[0],'ib')}<button class="ib" id="d-x" aria-label="关闭">×</button></div>
   <div class="d-body"><div class="d-tk">${esc(c[0])}<button class="copy" id="d-copy">复制代码</button></div><div class="d-nm" id="d-title">${esc(c[1])}</div>${c[1]!==c[2]?`<div class="d-en">${esc(c[2])}</div>`:''}
   <div class="d-row">${badges(c[3])}${tags(c)}${MW.has(c[0])?'<span class="tg">周一 / 周三 / 周五到期</span>':''}</div><div class="sec">${sw(c[4])}${S[c[4]]} · ${esc(c[5])}</div>
   <div class="d-h">靠什么赚钱</div><p class="d-desc">${esc(c[6])}</p>${c[7]?`<div class="d-note">${esc(c[7])}</div>`:''}
   ${th.length?`<div class="d-h">所属主题</div><div class="d-rel">${th.map(k=>`<button class="pill" data-theme="${k}">${TH[k].n}</button>`).join('')}</div>`:''}
-  <div class="d-h">期权数据<small>Cboe · ${ODATE}</small></div>${obox(c[0])}
+  <div class="d-h">期权数据<small>Cboe · ${ODATE}</small></div>${obox(c[0])}${obox2(c[0])}<div class="d-h">最近的走势<small>每个交易日收盘后记一笔</small></div><div class="sparkbox" data-spark="${esc(c[0])}">${sparkHTML(c[0])}</div>
   <div class="d-h">看期权</div><div class="d-links">${chainLinks(c[0],0)}<a href="https://finance.yahoo.com/calendar/earnings?symbol=${encodeURIComponent(y)}" target="_blank" rel="noopener">财报日期 ↗</a></div>
   <div class="d-h">看行情</div><div class="d-links"><a href="https://finance.yahoo.com/quote/${encodeURIComponent(y)}" target="_blank" rel="noopener">Yahoo Finance ↗</a><a href="https://www.tradingview.com/symbols/${encodeURIComponent(c[0])}/" target="_blank" rel="noopener">TradingView ↗</a><a href="https://www.google.com/finance?q=${encodeURIComponent(y)}" target="_blank" rel="noopener">Google Finance ↗</a></div>
   ${etfs.length?`<div class="d-h">持有它的常见 ETF</div><div class="d-rel">${etfs.map(([t,l])=>`<button class="pill" data-etf="${t}"><b>${t}</b>${l}</button>`).join('')}</div><p class="d-sm">按指数和板块归属推断，具体权重请到发行方网站查看。</p>`:''}
   <div class="d-h">同行业的公司</div><div class="d-rel">${rel.map(j=>`<button class="pill" data-i="${j}"><b>${esc(C[j][0])}</b>${esc(C[j][1])}</button>`).join('')}</div></div>`;
   d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');
-  if(hot)hot.classList.remove('hot');hot=tiles[i];hot.classList.add('hot');
+  if(hot)hot.classList.remove('hot');hot=tiles[i]||null;if(hot)hot.classList.add('hot');
   $('#d-x').focus({preventScroll:true})}
 function stepDrawer(n){const p=RES.indexOf(cur);if(p<0)return;const t=RES[p+n];if(t!=null)openDrawer(t)}
 function closeDrawer(){$('#drawer').classList.remove('on');if(!($('#side')&&$('#side').classList.contains('on')))$('#scrim').classList.remove('on');if(hot){hot.classList.remove('hot');hot=null}cur=-1;if(lastFocus&&document.body.contains(lastFocus))lastFocus.focus({preventScroll:true})}
@@ -830,6 +977,18 @@ $('#scrim').addEventListener('click',()=>{if($('#drawer').classList.contains('on
 $('#drawer').addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=[...$('#drawer').querySelectorAll('button:not(:disabled),a')];if(!f.length)return;const a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}});
 
 /* ---- 杂项 ---- */
+/* 名词解释：鼠标停留或点一下 [data-tip] 显示 */
+(()=>{const g=$('#gtip');let cur=null;const show=el=>{cur=el;g.textContent=el.dataset.tip;g.classList.add('on');const r=el.getBoundingClientRect(),w=Math.min(300,innerWidth-24);g.style.maxWidth=w+'px';
+    const gw=g.offsetWidth,gh=g.offsetHeight;let x=Math.max(12,Math.min(innerWidth-gw-12,r.left+r.width/2-gw/2)),y=r.top-gh-8;if(y<8)y=r.bottom+8;g.style.left=x+'px';g.style.top=y+'px'};
+  const hide=()=>{cur=null;g.classList.remove('on')};
+  document.addEventListener('pointerover',e=>{if(e.pointerType!=='mouse')return;const el=e.target.closest('[data-tip]');if(el)show(el);else if(cur)hide()});
+  document.addEventListener('click',e=>{const el=e.target.closest('[data-tip]');if(el&&el.classList.contains('q')){e.stopPropagation();cur===el?hide():show(el)}else if(cur&&!el)hide()},true);
+  document.addEventListener('focusin',e=>{const el=e.target.closest('[data-tip]');if(el)show(el)});
+  addEventListener('scroll',()=>{if(cur)hide()},{passive:true})})();
+/* 手机上详情页从底部弹出，往下拖关闭 */
+(()=>{const d=$('#drawer');let y0=null,dy=0;d.addEventListener('touchstart',e=>{if(innerWidth>760||d.scrollTop>0)return;y0=e.touches[0].clientY;dy=0},{passive:true});
+  d.addEventListener('touchmove',e=>{if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy>0){d.style.transition='none';d.style.transform=`translateY(${dy}px)`}},{passive:true});
+  d.addEventListener('touchend',()=>{if(y0==null)return;d.style.transition='';d.style.transform='';if(dy>90)closeDrawer();y0=null})})();
 let tt;function toast(s){const t=$('#toast');t.textContent=s;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800)}
 const totop=$('#totop');let sTick=0;addEventListener('scroll',()=>{if(sTick)return;sTick=1;requestAnimationFrame(()=>{sTick=0;totop.classList.toggle('on',scrollY>$('#bar').offsetTop+500)})},{passive:true});
 totop.addEventListener('click',()=>window.scrollTo({top:$('#bar').offsetTop,behavior:reduce?'auto':'smooth'}));
@@ -851,12 +1010,14 @@ function etNow(){const p={};new Intl.DateTimeFormat('en-US',{timeZone:'America/N
   const h=+p.hour%24,m=+p.minute;return {h,m,min:h*60+m,dow:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(p.weekday),y:+p.year,mo:+p.month,d:+p.day}}
 const bjOff=()=>{const d=new Date(),f=z=>new Date(d.toLocaleString('en-US',{timeZone:z}));return Math.round((f('Asia/Shanghai')-f('America/New_York'))/3600000)};
 const hm=(h,m)=>String(((h%24)+24)%24).padStart(2,'0')+':'+String(m).padStart(2,'0');
-function session(e){const wd=e.dow>=1&&e.dow<=5,t=e.min;
+function session(e){const ds=ymd(e.y,e.mo,e.d),hol=HOL[ds],early=EARLY[ds],wd=e.dow>=1&&e.dow<=5&&!hol,t=e.min,cl=early?780:960;
+  if(hol&&e.dow>=1&&e.dow<=5)return {stock:['休市（'+hol+'）','off'],opt:['期权休市','off']};
+  if(early&&wd)return {stock:t<240||t>=1020?['休市','off']:t<570?['盘前','ext']:t<cl?['半天交易（13:00 收盘）','live']:['盘后','ext'],opt:t>=570&&t<cl?['期权交易中，13:00 收盘','live']:t>=cl&&t<cl+15?['仅部分 ETF 期权还在交易','ext']:['期权已收盘','off']};
   return {stock:!wd||t<240||t>=1200?['休市','off']:t<570?['盘前','ext']:t<960?['常规交易时段','live']:['盘后','ext'],
           opt:wd&&t>=570&&t<960?['期权交易中','live']:wd&&t>=960&&t<975?['仅 ETF 期权还在交易','ext']:['期权已收盘','off']}}
 function third(y,mo){const d=new Date(Date.UTC(y,mo-1,1));return 1+(5-d.getUTCDay()+7)%7+14}
-function nextExp(e,quarterly){let y=e.y,mo=e.mo;for(let k=0;k<14;k++){if(!quarterly||mo%3===0){const d=third(y,mo);if(y>e.y||mo>e.mo||d>=e.d)return {y,mo,d}}mo++;if(mo>12){mo=1;y++}}}
-function nextFri(e){const d=new Date(Date.UTC(e.y,e.mo-1,e.d+(5-e.dow+7)%7));return {y:d.getUTCFullYear(),mo:d.getUTCMonth()+1,d:d.getUTCDate()}}
+function nextExp(e,quarterly){let y=e.y,mo=e.mo;for(let k=0;k<14;k++){if(!quarterly||mo%3===0){const d=third(y,mo)-(HOL[ymd(y,mo,third(y,mo))]?1:0);if(y>e.y||mo>e.mo||d>=e.d)return {y,mo,d}}mo++;if(mo>12){mo=1;y++}}}
+function nextFri(e){const d=new Date(Date.UTC(e.y,e.mo-1,e.d+(5-e.dow+7)%7));if(HOL[d.toISOString().slice(0,10)])d.setUTCDate(d.getUTCDate()-1);return {y:d.getUTCFullYear(),mo:d.getUTCMonth()+1,d:d.getUTCDate()}}
 const daysTo=(e,x)=>Math.round((Date.UTC(x.y,x.mo-1,x.d)-Date.UTC(e.y,e.mo-1,e.d))/864e5);
 const dl=(e,x)=>{const n=daysTo(e,x);return n===0?'就是今天':n===1?'明天':'还有 '+n+' 天'};
 function tick(){const e=etNow(),off=bjOff(),ss=session(e),bj=hm(e.h+off,e.m),et=hm(e.h,e.m);
@@ -922,20 +1083,45 @@ function osi(){const el=$('#o-in'),o=$('#osiout');if(!o)return;const m=el.value.
   o.innerHTML=ok?`<span>标的<b>${m[1]}</b></span><span>到期日<b>20${m[2]} 年 ${+m[3]} 月 ${+m[4]} 日，周${'日一二三四五六'[d.getUTCDay()]}</b></span><span>类型<b>${m[5]==='C'?'看涨 Call':'看跌 Put'}</b></span><span>行权价<b>${(+m[6]/1000).toString()}</b></span><span>一张对应<b>100 股</b></span>`:'<span>日期无效<b>请检查年月日</b></span>'}
 function initTrade(){setLegs();bs();osi()}
 function lbHTML(){
-  let r=Object.entries(O).filter(([t,o])=>o[0]>0&&(!st.lk||String(o[8])===st.lk)&&(!st.liv||OIVL.find(x=>x[0]===st.liv)[2](o))&&(!st.lsp||OSP.find(x=>x[0]===st.lsp)[2](o))&&(!st.lpc||OPC.find(x=>x[0]===st.lpc)[2](o))&&(!st.lmc||(CI.has(t)&&MCT.find(x=>x[0]===st.lmc)[3](C[CI.get(t)][8]||0))));
+  let r=Object.entries(O).filter(([t,o])=>o[0]>0&&(!st.lk||String(o[8])===st.lk)&&(!st.liv||OIVL.find(x=>x[0]===st.liv)[2](o))&&(!st.lsp||OSP.find(x=>x[0]===st.lsp)[2](o))&&(!st.lpc||OPC.find(x=>x[0]===st.lpc)[2](o))&&(!st.lunu||isUnu(o))&&(!st.lern||(o[16]&&dayDiff(etToday,o[16][0])>=0&&dayDiff(etToday,o[16][0])<=7))&&(!st.lmc||(CI.has(t)&&MCT.find(x=>x[0]===st.lmc)[3](C[CI.get(t)][8]||0))));
   const mcOf=t=>CI.has(t)?C[CI.get(t)][8]||0:0;
-  const k={v:0,iv:10,pc:3,chg:6,spr:13,oi:11}[st.lsort],g=o=>st.lsort==='chg'?Math.abs(o[6]):st.lsort==='pc'&&o[0]<1000?-1e9:nz(o[k])?(k===13?-o[k]:o[k]):-1e9;if(st.lsort==='mc')r.sort((a,b)=>mcOf(b[0])-mcOf(a[0]));else r.sort((a,b)=>g(b[1])-g(a[1]));
+  const k={v:0,iv:10,pc:3,chg:6,spr:13,oi:11}[st.lsort],g=o=>st.lsort==='chg'?Math.abs(o[6]):st.lsort==='pc'&&o[0]<1000?-1e9:nz(o[k])?(k===13?-o[k]:o[k]):-1e9;if(st.lsort==='mc')r.sort((a,b)=>mcOf(b[0])-mcOf(a[0]));else if(st.lsort==='em')r.sort((a,b)=>((b[1][17]||[0,0,-1])[2])-((a[1][17]||[0,0,-1])[2]));else r.sort((a,b)=>g(b[1])-g(a[1]));
   const ch=(key,list)=>`<button class="chip" data-lb="${key}" data-v="" aria-pressed="${!st[key]}">全部</button>`+list.map(([v,l])=>`<button class="chip" data-lb="${key}" data-v="${v}" aria-pressed="${st[key]===v}">${l}</button>`).join('');
   const nm=t=>IXN[t]||(CI.has(t)?C[CI.get(t)][1]:(E.find(e=>e[0]===t)||[0,O[t][7]])[1]);
-  return `<div class="lb-f"><div class="themes">${ch('lk',[['0','个股'],['1','ETF'],['2','指数']])}</div><div class="themes">${ch('liv',OIVL)}</div><div class="themes">${ch('lsp',OSP)}</div><div class="themes">${ch('lpc',OPC)}</div><div class="themes">${ch('lmc',MCT.map(([k,l])=>[k,l+'股']))}</div>
-  <select class="sort" id="lsort" aria-label="排序">${[['v','成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低'],['pc','P/C 高→低（成交 1000 张以上）'],['chg','涨跌幅绝对值 大→小'],['mc','市值 大→小（个股）']].map(([v,l])=>`<option value="${v}"${st.lsort===v?' selected':''}>${l}</option>`).join('')}</select></div>
+  return `<div class="lb-f"><div class="themes">${ch('lk',[['0','个股'],['1','ETF'],['2','指数']])}</div><div class="themes">${ch('liv',OIVL)}</div><div class="themes">${ch('lsp',OSP)}</div><div class="themes">${ch('lpc',OPC)}</div><div class="themes">${ch('lmc',MCT.map(([k,l])=>[k,l+'股']))}</div><div class="themes">${ch('lunu',[['y','只看异动']])}${ch('lern',[['y','7 天内财报']])}</div>
+  <select class="sort" id="lsort" aria-label="排序">${[['v','成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低'],['pc','P/C 高→低（成交 1000 张以上）'],['chg','涨跌幅绝对值 大→小'],['mc','市值 大→小（个股）'],['em','预期波动 大→小']].map(([v,l])=>`<option value="${v}"${st.lsort===v?' selected':''}>${l}</option>`).join('')}</select></div>
   <p class="d-sm">共 ${r.length} 只</p>
-  <div class="tbl-wrap"><table class="lbt"><thead><tr><th>代码</th><th>名称</th><th class="num">市值</th><th class="num">涨跌</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th>期权链</th></tr></thead><tbody>${r.slice(0,st.lshown).map(([t,o])=>{const inSite=CI.has(t)||o[8]===2||(o[8]&&ETFSET.has(t));
-    return `<tr><td class="nw">${inSite?`<button class="lbtk" data-lt="${t}">${t}</button>`:`<a class="lbtk" href="https://www.barchart.com/stocks/quotes/${encodeURIComponent(t)}/overview" target="_blank" rel="noopener">${t} ↗</a>`}${o[8]?`<span class="tg">${KN(o[8])}</span>`:''}</td><td class="nmc">${esc(nm(t))}</td><td class="num nw">${CI.has(t)?fmtCap(C[CI.get(t)][8]):'—'}</td><td class="num ${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</td><td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td><td class="nw lbl">${chainLinks(t,o[8])}</td></tr>`}).join('')}</tbody></table></div>
+  <div class="tbl-wrap"><table class="lbt"><thead><tr><th>代码</th><th>名称</th><th class="num">市值</th><th class="num">涨跌</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th class="num">预期波动</th><th>财报 / 异动</th><th>期权链</th></tr></thead><tbody>${r.slice(0,st.lshown).map(([t,o])=>{const inSite=CI.has(t)||o[8]===2||(o[8]&&ETFSET.has(t));
+    return `<tr><td class="nw">${inSite?`<button class="lbtk" data-lt="${t}">${t}</button>`:`<a class="lbtk" href="https://www.barchart.com/stocks/quotes/${encodeURIComponent(t)}/overview" target="_blank" rel="noopener">${t} ↗</a>`}${o[8]?`<span class="tg">${KN(o[8])}</span>`:''}</td><td class="nmc">${esc(nm(t))}</td><td class="num nw">${CI.has(t)?fmtCap(C[CI.get(t)][8]):'—'}</td><td class="num ${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</td><td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td><td class="num">${o[17]?'±'+o[17][2]+'%':'—'}</td><td class="nw">${earnBadge(t)}${unuBadge(t)}</td><td class="nw lbl">${chainLinks(t,o[8])}</td></tr>`}).join('')}</tbody></table></div>
   ${r.length>st.lshown?`<button class="more" id="lb-more">再显示 50 只（还有 ${r.length-st.lshown} 只）</button>`:''}`}
+/* ---- 市场日历（NYSE、美联储、美国劳工统计局官网，2026-11-14 核对） ---- */
+const HOL={'2026-01-01':'元旦','2026-01-19':'马丁·路德·金纪念日','2026-02-16':'总统日','2026-04-03':'耶稣受难日','2026-05-25':'阵亡将士纪念日','2026-06-19':'六月节','2026-07-03':'独立日（补休）','2026-09-07':'劳动节','2026-11-26':'感恩节','2026-12-25':'圣诞节',
+ '2027-01-01':'元旦','2027-01-18':'马丁·路德·金纪念日','2027-02-15':'总统日','2027-03-26':'耶稣受难日','2027-05-31':'阵亡将士纪念日','2027-06-18':'六月节（补休）','2027-07-05':'独立日（补休）','2027-09-06':'劳动节','2027-11-25':'感恩节','2027-12-24':'圣诞节（补休）'};
+const EARLY={'2026-11-27':'感恩节次日','2026-12-24':'平安夜','2027-11-26':'感恩节次日'};
+const FOMC=['2026-01-28','2026-03-18','2026-04-29','2026-06-17','2026-07-29','2026-09-16','2026-10-28','2026-12-09','2027-01-27','2027-03-17','2027-04-28','2027-06-09','2027-07-28','2027-09-15','2027-10-27','2027-11-17'];
+const CPI=['2026-11-10','2026-12-10','2027-01-13','2027-02-11','2027-03-10','2027-04-13','2027-05-12','2027-06-10','2027-07-14','2027-08-11','2027-09-14','2027-10-14','2027-11-10','2027-12-10'];
+const NFP=['2026-11-06','2026-12-04','2027-01-08','2027-02-05','2027-03-05','2027-04-02','2027-05-07','2027-06-04','2027-07-02','2027-08-06','2027-09-03','2027-10-08','2027-11-05','2027-12-03'];
+const ymd=(y,m,d)=>y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+function calEvents(days){const out=[],t0=Date.parse(etToday);const inR=s=>{const n=(Date.parse(s)-t0)/864e5;return n>=0&&n<=days};
+  Object.entries(HOL).forEach(([d,n])=>inR(d)&&out.push([d,'休市',n+'，股票和期权全天休市','off']));
+  Object.entries(EARLY).forEach(([d,n])=>inR(d)&&out.push([d,'半天交易',n+'，美东 13:00 收盘（部分 ETF 和指数期权到 13:15）','ext']));
+  FOMC.forEach(d=>inR(d)&&out.push([d,'美联储议息',`美东 14:00 公布利率决定，14:30 记者会${d>='2027'?'（日期待美联储确认）':''}`,'live']));
+  CPI.forEach(d=>inR(d)&&out.push([d,'CPI','美东 8:30 公布上月消费者物价指数','live']));
+  NFP.forEach(d=>inR(d)&&out.push([d,'非农就业','美东 8:30 公布上月就业报告','live']));
+  const y0=+etToday.slice(0,4),m0=+etToday.slice(5,7);for(let k=0;k<3;k++){let y=y0,m=m0+k;if(m>12){m-=12;y++}let d=ymd(y,m,third(y,m));if(HOL[d]){const x=new Date(d+'T12:00:00Z');x.setUTCDate(x.getUTCDate()-1);d=x.toISOString().slice(0,10)}
+    inR(d)&&out.push([d,m%3===0?'季度到期（三巫日）':'月度期权到期',m%3===0?'股票、指数期权和期货同日到期，尾盘成交量和波动放大':'个股和 ETF 月度期权到期，周五收盘后行权和指派','opex'])}
+  return out.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0)}
+function calHTML(){const ev=calEvents(60);if(!ev.length)return'<p class="d-sm">未来 60 天没有收录的事件。</p>';const off=bjOff();
+  return `<div class="cal">${ev.map(([d,k,t,c])=>{const n=dayDiff(etToday,d);return `<div class="cal-r ${c}"><span class="cal-d"><b>${md(d)}</b>${wkd(d)}</span><span class="cal-k">${k}</span><span class="cal-t">${t}${/8:30/.test(t)?`（北京 ${8+off>=24?'次日 ':''}${hm(8+off,30)}）`:/14:00/.test(t)?`（北京 ${14+off>=24?'次日 ':''}${hm(14+off,0)}）`:''}</span><span class="cal-n">${n===0?'今天':n===1?'明天':n+' 天后'}</span></div>`}).join('')}</div>
+  <p class="d-sm">节假日来自纽交所官网，议息日来自美联储官网（2027 年为暂定），CPI 和非农来自美国劳工统计局官网。</p>`}
+function weekEarnHTML(){const r=C.map((c,i)=>[i,earnOf(c[0])]).filter(([i,e])=>e&&dayDiff(etToday,e[0])>=0&&dayDiff(etToday,e[0])<=7)
+   .sort((a,b)=>a[1][0]<b[1][0]?-1:a[1][0]>b[1][0]?1:(a[1][1]==='pre'?0:1)-(b[1][1]==='pre'?0:1)||(C[b[0]][8]||0)-(C[a[0]][8]||0));
+  if(!r.length)return'<p class="d-sm">未来 7 天本站公司没有财报，或者财报日历这次没取到。</p>';
+  return `<div class="tbl-wrap"><table class="lbt wk"><thead><tr><th>日期</th><th>代码</th><th>名称</th><th class="num">市值</th><th class="num">财报后预期波动${qk('财报后预期波动')}</th><th class="num">IV30</th><th class="num">期权成交</th></tr></thead><tbody>${r.map(([i,e])=>{const c=C[i],o=O[c[0]];
+    return `<tr><td class="nw">${md(e[0])} ${wkd(e[0])}<small class="mu">${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}</small></td><td class="nw"><button class="lbtk" data-i="${i}">${c[0]}</button></td><td class="nmc">${esc(c[1])}</td><td class="num nw">${fmtCap(c[8])}</td><td class="num">${o&&o[18]?'±'+o[18][2]+'%':'—'}</td><td class="num">${o&&o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${o?fmtN(o[0]):'—'}</td></tr>`}).join('')}</tbody></table></div>`}
 function tradeHTML(){const off=bjOff();
   return `<div class="prose" style="max-width:1000px">
-<div class="secnav">${[['sec-now','时段'],['sec-tl','时间表'],['sec-find','找标的'],['sec-rank','成交榜'],['sec-pay','损益图'],['sec-bs','定价器'],['sec-exp','到期日'],['sec-rule','合约规则'],['sec-order','下单'],['sec-pick','选合约'],['sec-earn','财报'],['sec-risk','风控'],['sec-greek','希腊字母'],['sec-strat','策略对照']].map(([k,l])=>`<button class="chip" data-jump="${k}">${l}</button>`).join('')}</div>
+<div class="secnav">${[['sec-now','时段'],['sec-tl','时间表'],['sec-cal','日历'],['sec-wk','本周财报'],['sec-find','找标的'],['sec-rank','成交榜'],['sec-pay','损益图'],['sec-bs','定价器'],['sec-exp','到期日'],['sec-rule','合约规则'],['sec-order','下单'],['sec-pick','选合约'],['sec-earn','财报'],['sec-risk','风控'],['sec-greek','希腊字母'],['sec-strat','策略对照']].map(([k,l])=>`<button class="chip" data-jump="${k}">${l}</button>`).join('')}</div>
 <h2 id="sec-now">现在是什么时段<small>按你电脑的时钟换算，不含美国节假日</small></h2>
 <div class="clock" id="clock"></div>
 
@@ -943,6 +1129,11 @@ function tradeHTML(){const off=bjOff();
 <div class="tl" id="tl"><div><span>美东</span><span>北京</span><span>发生什么</span></div>
 ${TIMES.map(([h,m,t,d])=>`<div data-t="${h*60+m}"><span class="t">${hm(h,m)}</span><span class="t">${hm(h+off,m)}</span><span><b>${t}</b>　${d}</span></div>`).join('')}</div>
 <p class="d-sm">数据公布的具体日期每月不同，请以财经日历为准。</p>
+
+<h2 id="sec-cal">近期日历<small>休市、半天交易、议息、CPI、非农、期权到期；时间按美东，北京时间按现在的时差换算</small></h2>
+${calHTML()}
+<h2 id="sec-wk">7 天内的财报<small>本站公司，来自纳斯达克财报日历；点代码看详情</small></h2>
+${weekEarnHTML()}
 
 <h2 id="sec-find">先找标的<small>期权好不好做，先看成交和到期日够不够多</small></h2>
 <div class="watch">
@@ -1179,6 +1370,8 @@ const AUDIT=`<div class="prose">
 <ul><li>六百多条业务介绍只重点检查了今年有并购、分拆、退市的公司，其余没有逐条查证</li><li>“不在三大指数”的活跃个股和 ETF 是凭经验挑选的，没有用成交量数据验证</li><li>仅在纳斯达克100 中的公司，行业分类是整理者归的，不是官方 GICS</li><li>“热门主题”、ETF 的发行方和方向是按文字关键词自动归类的，没有逐只复核</li><li>“期权”页的合约规则、选合约和风控经验、希腊字母和策略说明凭已有知识整理，定价器用的是标准 Black-Scholes 公式，这次只联网核实了 PDT 规则废除和个股周一周三到期期权两项；“指数权重股”“期权活跃”的个股和 ETF 名单是凭经验挑的，不是成交量排名</li><li>罗素指数改为半年重编这一条来自富时罗素此前的公告，这次没有重新查证</li><li>原始 Excel 文件没有改动，修正只体现在本网站里</li></ul></div>
 </div>`;
 
-setView(location.hash.slice(1)||'companies',true);
+for(const k of urlKeys())DEF[k]=st[k];
+layoutMap();paintLegend();
+setView(readURL(),true);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moveInd);
 </script>
