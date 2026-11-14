@@ -223,24 +223,54 @@ def _bars(sym, kind, day):
         prev = None
     return out, prev
 
-def intraday_one(sym, kind, day, px, chg):
-    bars, prev = _bars(sym, kind, day)
-    prev = prev or (px / (1 + chg / 100) if px and chg > -100 else 0)
-    if not prev: return None
-    pts = [None] * 79   # 9:30 起每 5 分钟一格，最后一格是 16:00 收盘
+def _pack(bars, prev, px):
+    """1 分钟线 -> 9:30 起每 5 分钟一格（共 79 格，最后一格是 16:00 收盘），存成相对昨收的万分比整数。"""
+    pts = [None] * 79
     last = -1
     for m, c in bars:
         if not c or not 570 < m <= 960: continue   # 只要正常交易时段
         i = min((m - 571) // 5, 77)
         pts[i] = c; last = max(last, i)
-    if last < 6: return None
-    pts[last + 1] = px          # 收盘价接在最后（提前收盘的日子就在中间结束）
+    if last < 6 or not prev: return None
+    pts[last + 1] = px or pts[last]   # 收盘价接在最后（提前收盘的日子就在中间结束）
     for i in range(1, last + 2):  # 中间没成交的格子沿用前一格
         if pts[i] is None: pts[i] = pts[i - 1]
     if pts[0] is None:
         k = next(i for i, v in enumerate(pts) if v is not None); pts[:k] = [pts[k]] * k
-    # 存成相对昨收的万分比整数，文件小很多；网页再用昨收换算回价格
+    # 网页再用昨收换算回价格
     return [round(prev, 4), [round((v / prev - 1) * 1e4) for v in pts[:last + 2]]]
+
+def intraday_one(sym, kind, day, px, chg):
+    bars, prev = _bars(sym, kind, day)
+    prev = prev or (px / (1 + chg / 100) if px and chg > -100 else 0)
+    return _pack(bars, prev, px)
+
+# 没有指数期权的指数：能取到当天走势的直接取（网页上的代码: (来源, 那边的代码)）
+INDEX_CHART = {'IXIC': ('nq', 'COMP'), 'SOX': ('nq', 'SOX'), 'BKX': ('nq', 'BKX'),
+               'DJT': ('cboe', 'DJT'), 'RUI': ('cboe', 'RUI')}
+# 取不到的用跟踪它的 ETF 代替（网站上没有的这几只单独取）
+PROXY_ETF = ['IWB', 'IWV', 'UUP']
+
+def intraday_index(src, sym, day):
+    if src == 'cboe':
+        bars, _ = _bars(sym, 2, day)
+        q = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{sym}.json', tries=3, timeout=60))['data']
+        prev, px = q.get('prev_day_close'), q.get('current_price')
+        if not prev or prev == px: return None   # 昨收和现价一样，多半是 Cboe 没更新昨收，不用
+        return _pack(bars, prev, None)
+    q = urllib.parse.quote(sym, safe='')
+    with urllib.request.urlopen(urllib.request.Request(
+            f'https://api.nasdaq.com/api/quote/{q}/chart?assetclass={"index" if src == "nq" else "etf"}', headers=NQ), timeout=30) as r:
+        d = json.loads(r.read()).get('data') or {}
+    bars = []
+    for b in d.get('chart') or []:
+        t = datetime.datetime.fromtimestamp(b['x'] / 1000, datetime.timezone.utc)
+        if t.date().isoformat() == day: bars.append((t.hour * 60 + t.minute, b.get('y')))
+    try:
+        prev = float(str(d.get('previousClose', '')).replace('$', '').replace(',', ''))
+    except ValueError:
+        return None
+    return _pack(bars, prev, None)
 
 def intraday(res, day):
     out, t0, fails = {}, time.time(), []
@@ -253,6 +283,15 @@ def intraday(res, day):
                 if v: out[fut[f]] = v
             except Exception as e:
                 fails.append(fut[f])
+    extra = [(k, v) for k, v in INDEX_CHART.items()] + [(e, ('etf', e)) for e in PROXY_ETF]
+    for k, (src, sym) in extra:
+        try:
+            v = intraday_index(src, sym, day)
+            if v: out[k] = v
+            else: fails.append(k)
+        except Exception:
+            fails.append(k)
+        time.sleep(0.5)
     if fails: print(f'分时取不到 {len(fails)} 只：{" ".join(sorted(fails)[:40])}', flush=True)
     json.dump({'d': day, 's': out}, open(os.path.join(DATA, 'intraday.json'), 'w'), separators=(',', ':'))
     print(f'分时走势 {len(out)} 只，用时 {time.time() - t0:.0f}s', flush=True)

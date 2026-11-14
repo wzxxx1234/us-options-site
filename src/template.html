@@ -149,6 +149,7 @@ h1 em{font-style:normal;color:var(--accent)}
 .icb-c{position:relative;height:150px;margin-top:6px;cursor:crosshair;touch-action:pan-y}
 .icb-x{position:absolute;top:0;bottom:0;width:1px;background:var(--ink);opacity:.35;pointer-events:none}
 .icb-ax{position:relative;height:18px;font-size:11px;color:var(--muted);font-family:var(--f-mono)}.icb-ax span{position:absolute;top:3px;transform:translateX(-50%)}.icb-ax span:first-child{transform:none}
+.qnote{margin:-2px 0 4px;font-size:11.5px;color:var(--muted)}
 .news .en,.fnews .en{display:block;font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:1px}
 .dalert{margin-top:12px;display:grid;gap:8px}
 .dalert p{margin:0;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6;border:1px solid transparent}
@@ -936,7 +937,7 @@ function indicesHTML(){const list=matchIdx();
   return (st.q?'':`<h2>三大指数的行业构成<small>按成分股数量统计，不是按权重</small></h2><div class="cmp">${[1,2,3].map((k,n)=>compHTML(k,n)).join('')}</div>
   <div class="overlap"><button data-goidx="tri"><b>${cnt(c=>c[3]===7)}</b><span>三大指数都在 →</span></button><div><b>${cnt(c=>(c[3]&3)===3)}</b><span>同在标普500 和纳指100</span></div><div><b>${cnt(c=>(c[3]&5)===5)}</b><span>同在标普500 和道指30</span></div><div><b>${cnt(c=>(c[3]&3)===2)}</b><span>在纳指100 但不在标普500</span></div></div>
   <h2>指数一览<small>${I.length} 个，点 ETF 代码可跳到对应 ETF</small></h2>`)+
-  (list.length?`<div class="idx-grid">${list.map((r,n)=>`<article class="idx" style="--n:${n}"><div class="idx-h"><b>${hl(r[0])}</b><span class="tk">${hl(r[2])}</span></div><div class="idx-en">${hl(r[1])}</div>${qrow((IXO[r[2]]||[]).find(t=>O[t]),1)}<p>${hl(r[8])}</p><dl><dt>成分数量</dt><dd>${esc(r[3])}</dd><dt>加权方式</dt><dd>${esc(r[4])}</dd><dt>编制方</dt><dd>${esc(r[5])}</dd><dt>对应 ETF</dt><dd>${tlinks(r[6])}</dd><dt>对应期货</dt><dd>${esc(r[7])}</dd></dl>${ixopt(r[2])}</article>`).join('')}</div>`:`<div class="empty"><b>没有匹配的指数</b>换个关键词试试。</div>`)}
+  (list.length?`<div class="idx-grid">${list.map((r,n)=>`<article class="idx" style="--n:${n}"><div class="idx-h"><b>${hl(r[0])}</b><span class="tk">${hl(r[2])}</span></div><div class="idx-en">${hl(r[1])}</div>${ixq(r[2])}<p>${hl(r[8])}</p><dl><dt>成分数量</dt><dd>${esc(r[3])}</dd><dt>加权方式</dt><dd>${esc(r[4])}</dd><dt>编制方</dt><dd>${esc(r[5])}</dd><dt>对应 ETF</dt><dd>${tlinks(r[6])}</dd><dt>对应期货</dt><dd>${esc(r[7])}</dd></dl>${ixopt(r[2])}</article>`).join('')}</div>`:`<div class="empty"><b>没有匹配的指数</b>换个关键词试试。</div>`)}
 
 /* ---- 主区域事件 ---- */
 function favToggle(t){favs.has(t)?favs.delete(t):favs.add(t);store.set('favs',[...favs]);toast(favs.has(t)?`已把 ${t} 加入自选`:`已把 ${t} 移出自选`)}
@@ -994,12 +995,19 @@ function obox2(t){const o=O[t];if(!o)return'';const e=o[16],w=o[19],m=o[20],u=o[
   return rows.length?`<div class="kv2s">${rows.join('')}</div>`:''}
 /* ---- 当天分时走势：每天收盘后取一次，存在 intraday.json（5 分钟一个点，存的是相对昨收的万分比） ---- */
 let INTRA=null,INTRAERR=false;
-const fillIC=()=>{$$('[data-ic]').forEach(el=>{const m=el.classList.contains('ic-mini');el.innerHTML=ichart(el.dataset.ic,m?80:120,m?24:32)});$$('[data-icb]').forEach(el=>el.innerHTML=bigIC(el.dataset.icb))};
+const fillIC=()=>{$$('[data-ic]').forEach(el=>{const m=el.classList.contains('ic-mini');el.innerHTML=ichart(el.dataset.ic,m?80:120,m?24:32)});$$('[data-icb]').forEach(el=>el.innerHTML=bigIC(el.dataset.icb));$$('[data-ixq]').forEach(el=>{el.outerHTML=ixq(el.dataset.ixq)})};
 fetch('intraday.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.s)INTRA=j;else INTRAERR=true;fillIC()}).catch(()=>{INTRAERR=true;fillIC()});
 function ichart(t,w,h){const v=t&&INTRA&&INTRA.s[t];if(!v)return'';const a=v[1],N=78,lo=Math.min(0,...a),hi=Math.max(0,...a),r=hi-lo||1,p=2;
   const X=i=>(i/N*w).toFixed(1),Y=x=>(p+(hi-x)/r*(h-2*p)).toFixed(1),ln=a.map((x,i)=>(i?'L':'M')+X(i)+' '+Y(x)).join('');
   return `<svg class="ic ${a[a.length-1]>=0?'up':'dn'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path class="ar" d="${ln}L${X(a.length-1)} ${h}L0 ${h}Z"/><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}"/><path class="ln" d="${ln}"/></svg>`}
 const f2=x=>x>=1000?x.toFixed(1):x.toFixed(2);
+/* 指数卡片：有指数期权的用期权数据里的价格；没有的用单独取的指数走势；再没有就用跟踪它的 ETF 代替 */
+const IXP={RUI:'IWB',RUA:'IWV',MID:'MDY',SML:'IJR',DJU:'XLU',HXC:'KWEB',DXY:'UUP'};
+function ixq(code){const op=(IXO[code]||[]).find(t=>O[t]);if(op)return qrow(op,1);
+  if(!INTRA)return INTRAERR?'':`<div data-ixq="${esc(code)}"></div>`;
+  if(INTRA.s[code])return qrowI(code,'');const p=IXP[code];return p&&INTRA.s[p]?qrowI(p,`走势和价格用 ETF ${p} 代替`):''}
+function qrowI(k,note){const [pc,a]=INTRA.s[k],x=a[a.length-1],px=pc*(1+x/1e4),etf=!!note;
+  return `<div class="qrow big"><span class="ic-w" data-ic="${k}">${ichart(k,120,32)}</span><span class="qp"><b>${etf?'$':''}${px.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b><i class="${x>=0?'up':'dn'}">${x>0?'+':''}${(x/100).toFixed(2)}%</i></span></div>${note?`<p class="qnote">${note}</p>`:''}`}
 function qrow(t,big){const o=t&&O[t];if(!o||!o[5])return'';
   return `<div class="qrow${big?' big':''}"><span class="ic-w" data-ic="${t}">${ichart(t,120,32)}</span><span class="qp"><b>${o[8]===2?'':'$'}${(t==='DJX'?o[5]*100:+o[5]).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b><i class="${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</i></span></div>`}
 function bigIC(t){const v=INTRA&&INTRA.s[t];if(!v)return `<p class="d-sm">${INTRA||INTRAERR?'这天没有取到它的分时走势，下一次自动更新后再看。':'正在读取当天走势…'}</p>`;
