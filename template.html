@@ -103,6 +103,14 @@ h1 em{font-style:normal;color:var(--accent)}
   .d-handle{display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 8px}
   .kv2{grid-template-columns:1fr}.kv2>span{grid-row:auto}
 }
+.dalert{margin-top:12px;display:grid;gap:8px}
+.dalert p{margin:0;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6;border:1px solid transparent}
+.dalert p b{margin-right:8px}
+.dalert p.bad{background:color-mix(in oklab,var(--loss) 14%,var(--surface));border-color:color-mix(in oklab,var(--loss) 45%,transparent);color:var(--ink)}
+.dalert p.bad b{color:var(--loss)}
+.dalert p.warn{background:var(--warn-soft);color:var(--ink)}.dalert p.warn b{color:var(--warn)}
+.dalert p.info{background:var(--sunk);color:var(--muted)}.dalert p.info b{color:var(--ink)}
+.dalert a{color:var(--accent);white-space:nowrap}
 .datastamp{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:14px 0 0;font-size:12.5px;color:var(--muted)}
 .datastamp i{width:7px;height:7px;border-radius:50%;background:var(--gain);flex:none}
 .datastamp.old i{background:var(--loss)}.datastamp b{color:var(--loss);font-weight:500}
@@ -497,6 +505,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
   <button class="now" id="now" aria-label="查看日内时间表"></button>
   <div class="stats" id="stats"></div>
   <p class="datastamp" id="datastamp"></p>
+  <div class="dalert" id="dalert" role="status" hidden></div>
 
   <section class="mosaic-box" aria-label="市场地图：方块大小是市值，颜色是当天表现">
     <div class="mosaic-head"><strong id="tm-title">市场地图：方块越大市值越大，颜色看当天表现。点行业名放大，点方块看详情</strong>
@@ -1119,6 +1128,21 @@ function weekEarnHTML(){const r=C.map((c,i)=>[i,earnOf(c[0])]).filter(([i,e])=>e
   if(!r.length)return'<p class="d-sm">未来 7 天本站公司没有财报，或者财报日历这次没取到。</p>';
   return `<div class="tbl-wrap"><table class="lbt wk"><thead><tr><th>日期</th><th>代码</th><th>名称</th><th class="num">市值</th><th class="num">财报后预期波动${qk('财报后预期波动')}</th><th class="num">IV30</th><th class="num">期权成交</th></tr></thead><tbody>${r.map(([i,e])=>{const c=C[i],o=O[c[0]];
     return `<tr><td class="nw">${md(e[0])} ${wkd(e[0])}<small class="mu">${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}</small></td><td class="nw"><button class="lbtk" data-i="${i}">${c[0]}</button></td><td class="nmc">${esc(c[1])}</td><td class="num nw">${fmtCap(c[8])}</td><td class="num">${o&&o[18]?'±'+o[18][2]+'%':'—'}</td><td class="num">${o&&o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${o?fmtN(o[0]):'—'}</td></tr>`}).join('')}</tbody></table></div>`}
+/* ---- 自动更新没成功时在首页提醒 ---- */
+function lastSessionBefore(ds){const d=new Date(ds+'T12:00:00Z');for(let k=0;k<12;k++){d.setUTCDate(d.getUTCDate()-1);const s=d.toISOString().slice(0,10),w=d.getUTCDay();if(w>0&&w<6&&!HOL[s])return s}return ds}
+function dataAlert(){const el=$('#dalert');if(!el||!OD.date)return;
+  const gh=/github\.io$/.test(location.hostname)?`https://github.com/${location.hostname.split('.')[0]}/${location.pathname.split('/')[1]}/actions`:'https://github.com/wzxxx1234/us-options-site/actions';
+  const link=`<a href="${gh}" target="_blank" rel="noopener">查看 GitHub 运行记录 ↗</a>`,vals=Object.values(O);
+  const exp=lastSessionBefore(etToday),msgs=[];
+  if(OD.date<exp)msgs.push(['bad',`期权数据还停在美东 ${ODATE}，最近一个交易日（${md(exp)} ${wkd(exp)}）的自动更新没有成功，网站上的数据是旧的。${link}`]);
+  else{
+    if((OD.n||0)<700)msgs.push(['warn',`这次只抓到 ${OD.n} 只标的（正常 730 只左右），部分数据缺失。${link}`]);
+    if(!vals.some(o=>o[17]))msgs.push(['info','预期波动、财报日、Call/Put 墙、最大痛点和期权异动要等下一次完整的自动更新后才有数据（每个交易日美股收盘后，北京时间早上 5:45 开始）。']);
+    else if(!vals.some(o=>o[16]))msgs.push(['warn',`这次没有取到纳斯达克的财报日历，财报日期和“7 天内的财报”暂时是空的。${link}`]);
+  }
+  if(msgs.some(m=>m[0]==='bad'))$('#datastamp').classList.add('old');
+  if(!msgs.length){el.hidden=true;return}
+  el.hidden=false;el.className='dalert '+msgs[0][0];el.innerHTML=msgs.map(([k,t])=>`<p class="${k}"><b>${k==='bad'?'数据没有更新':k==='warn'?'数据不完整':'说明'}</b>${t}</p>`).join('')}
 function tradeHTML(){const off=bjOff();
   return `<div class="prose" style="max-width:1000px">
 <div class="secnav">${[['sec-now','时段'],['sec-tl','时间表'],['sec-cal','日历'],['sec-wk','本周财报'],['sec-find','找标的'],['sec-rank','成交榜'],['sec-pay','损益图'],['sec-bs','定价器'],['sec-exp','到期日'],['sec-rule','合约规则'],['sec-order','下单'],['sec-pick','选合约'],['sec-earn','财报'],['sec-risk','风控'],['sec-greek','希腊字母'],['sec-strat','策略对照']].map(([k,l])=>`<button class="chip" data-jump="${k}">${l}</button>`).join('')}</div>
@@ -1371,7 +1395,7 @@ const AUDIT=`<div class="prose">
 </div>`;
 
 for(const k of urlKeys())DEF[k]=st[k];
-layoutMap();paintLegend();
+layoutMap();paintLegend();dataAlert();
 setView(readURL(),true);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moveInd);
 </script>
