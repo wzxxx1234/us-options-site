@@ -52,6 +52,9 @@ h1 em{font-style:normal;color:var(--accent)}
 .theme-btn{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;transition:transform .25s,border-color .2s}
 .theme-btn:hover{border-color:var(--accent);transform:rotate(20deg)}
 .theme-btn svg{width:20px;height:20px}
+.datastamp{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:14px 0 0;font-size:12.5px;color:var(--muted)}
+.datastamp i{width:7px;height:7px;border-radius:50%;background:var(--gain);flex:none}
+.datastamp.old i{background:var(--loss)}.datastamp b{color:var(--loss);font-weight:500}
 .stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:22px}
 .stat b{display:block;font-family:var(--f-mono);font-weight:600;font-size:clamp(24px,3.4vw,34px);line-height:1.1;font-variant-numeric:tabular-nums}
 .stat span{font-size:13px;color:var(--muted)}
@@ -191,6 +194,8 @@ h2{font-family:var(--f-display);font-weight:700;font-size:22px;margin:30px 0 12p
 h2:first-child{margin-top:4px}
 h2 small{font-family:var(--f-body);font-weight:400;font-size:13px;color:var(--muted)}
 .note{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13.5px;margin:0 0 14px}
+.ef-toggle{margin-bottom:12px}
+@media (max-width:760px){.frows:not(.on){display:none}}
 .frows{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 16px;margin-bottom:14px}
 .frow{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
 .frow:first-child{border-top:0}
@@ -440,6 +445,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
   </div>
   <button class="now" id="now" aria-label="查看日内时间表"></button>
   <div class="stats" id="stats"></div>
+  <p class="datastamp" id="datastamp"></p>
 
   <section class="mosaic-box" aria-label="全市场点阵：每格一家公司">
     <div class="mosaic-head"><strong>一格一家公司。点格子看介绍，筛选后不符合的会变暗</strong>
@@ -547,7 +553,7 @@ const EG=[['eopt','期权活跃',EOR],['eivl','IV30',eW(OIVL)],['espr','买卖�
 const eclear=()=>{st.ecat=st.eiss=st.edir='';EG.forEach(g=>st[g[0]]='');st.eshown=50};
 const EHAY=E.map(e=>e.join(' ').toLowerCase());
 
-const st={view:'companies',q:'',idx:'all',sec:new Set(),theme:-1,tr:'',fav:false,sort:'d',mode:store.get('mode','card'),shown:36,color:'sector',ecat:'',eiss:'',edir:'',eopt:'',eivl:'',espr:'',eexp:'',epc:'',escope:'',esort:'v',eshown:50,orank:'',opc:'',lk:'',liv:'',lsort:'v',lpc:'',lsp:'',lshown:30};
+const st={view:'companies',q:'',idx:'all',sec:new Set(),theme:-1,tr:'',fav:false,sort:'d',mode:store.get('mode','card'),shown:36,color:'sector',ecat:'',eiss:'',edir:'',eopt:'',eivl:'',espr:'',eexp:'',epc:'',escope:'',esort:'v',eshown:50,efOpen:false,orank:'',opc:'',lk:'',liv:'',lsort:'v',lpc:'',lsp:'',lshown:30};
 if(!['card','table','group'].includes(st.mode))st.mode='card';
 let favs=new Set(store.get('favs',[]));
 let RES=[];
@@ -556,6 +562,11 @@ let RES=[];
 const cnt=f=>C.filter(f).length;
 $('#stats').innerHTML=[[C.length,'家公司 / 股票'],[cnt(IDX[1][2]),'标普500'],[cnt(IDX[2][2]),'纳斯达克100'],[cnt(IDX[3][2]),'道琼斯30'],[E.length,'只 ETF'],[I.length,'个指数']].map(([n,l])=>`<div class="stat"><b data-n="${n}">${n}</b><span>${l}</span></div>`).join('');
 
+/* ---- 期权数据日期 ---- */
+(()=>{const el=$('#datastamp');if(!el||!OD.date)return;let today='';try{today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date())}catch(e){}
+  const age=today?Math.round((Date.parse(today)-Date.parse(OD.date))/864e5):0;
+  el.innerHTML=`<i></i>期权数据：美东 ${ODATE}${OD.ts?' '+OD.ts.slice(11,16):''} · 来自 Cboe，每个交易日收盘后自动更新${age>4?`<b>已经 ${age} 天没有新数据，自动更新可能出了问题</b>`:''}`;
+  if(age>4)el.classList.add('old')})();
 /* ---- 点阵 ---- */
 const order=C.map((c,i)=>i).sort((a,b)=>C[a][4]-C[b][4]||a-b);
 const idxColor=c=>c[3]&4?'var(--m-dow)':c[3]&2?'var(--m-ndx)':c[3]&1?'var(--m-sp)':'var(--m-none)';
@@ -706,7 +717,8 @@ function etfHTML(){
   const flat=st.esort!=='d';
   if(flat){const k=OSORT[st.esort],g=e=>{const o=O[e[0]];return o&&nz(o[k])?(k===13?-o[k]:o[k]):-1e9};list=list.slice().sort((a,b)=>g(b)-g(a))}
   const nO=E.filter(e=>O[e[0]]).length;
-  return `<div class="frows"><div class="frow ohead"><b>期权</b><span>Cboe 延时数据 · ${ODATE}：网站上 ${E.length} 只 ETF 里 ${nO} 只抓到了期权链，可以按成交量、IV30、买卖价差、到期日来筛。</span></div>${EG.map(([k,n,l])=>grow(n,k,l)).join('')}${row('类别','ecat',cats,2)}${row('发行方','eiss',iss,5)}</div>
+  const nef=(st.ecat?1:0)+(st.eiss?1:0)+EG.filter(g=>st[g[0]]).length;
+  return `<button class="filter-btn ef-toggle" id="ef-toggle" aria-expanded="${st.efOpen}">${st.efOpen?'收起筛选':'筛选 ETF'}${nef?`<small>${nef}</small>`:''}</button><div class="frows${st.efOpen?' on':''}"><div class="frow ohead"><b>期权</b><span>Cboe 延时数据 · ${ODATE}：网站上 ${E.length} 只 ETF 里 ${nO} 只抓到了期权链，可以按成交量、IV30、买卖价差、到期日来筛。</span></div>${EG.map(([k,n,l])=>grow(n,k,l)).join('')}${row('类别','ecat',cats,2)}${row('发行方','eiss',iss,5)}</div>
   <div class="res-head"><p class="count">共 <b>${list.length}</b> 只 ETF</p><div class="res-tools">${act?'<button class="clear-all" id="etf-clear">清除全部条件</button>':''}<label for="esort" hidden>排序</label><select class="sort" id="esort">${[['d','按类别分组'],['v','期权成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低']].map(([v,l])=>`<option value="${v}"${st.esort===v?' selected':''}>${l}</option>`).join('')}</select></div></div>`+
   (list.length?flat?`<div class="idx-grid">${list.slice(0,st.eshown).map(erow).join('')}</div>${list.length>st.eshown?`<button class="more" id="emore">再显示 100 只（还有 ${list.length-st.eshown} 只）</button>`:''}`:cats.map(c=>{let r=list.filter(e=>e[2]===c);if(!r.length)return'';const n=r.length;r=r.slice().sort((a,b)=>(O[b[0]]?O[b[0]][0]:-1)-(O[a[0]]?O[a[0]][0]:-1));
     return `<h2>${esc(c)}<small>${n} 只</small></h2>${/波动率/.test(c)?'<p class="note">波动率产品持有的是 VIX 期货，要不断展期，长期持有净值会被磨损，只适合短线。</p>':''}<div class="idx-grid">${r.slice(0,12).map(erow).join('')}</div>${n>12?`<button class="more" data-ecatall="${esc(c)}">看这一类全部 ${n} 只（按成交量排）</button>`:''}`}).join(''):`<div class="empty"><b>没有符合条件的 ETF</b>换个关键词，或者放宽上面的条件。<br><button id="etf-clear">清除全部条件</button></div>`)}
@@ -742,6 +754,7 @@ $('#main').addEventListener('click',e=>{const T=e.target;let b;
   if(T.closest('#open-sheet')){$('#side').classList.add('on');$('#scrim').classList.add('on');return}
   if(T.closest('#sheet-x,#sheet-ok')){closeSheet();return}
   if(b=T.closest('[data-e]')){st[b.dataset.e]=st[b.dataset.e]===b.dataset.v?'':b.dataset.v;st.eshown=50;render();return}
+  if(T.closest('#ef-toggle')){st.efOpen=!st.efOpen;render();return}
   if(T.closest('#etf-clear')){eclear();setQ('');render();return}
   if(T.closest('#emore')){st.eshown+=100;render();return}
   if(b=T.closest('[data-ecatall]')){st.ecat=b.dataset.ecatall;st.esort='v';st.eshown=50;render();window.scrollTo(0,$('#bar').offsetTop);return}
@@ -887,11 +900,11 @@ function osi(){const el=$('#o-in'),o=$('#osiout');if(!o)return;const m=el.value.
 function initTrade(){setLegs();bs();osi()}
 function lbHTML(){
   let r=Object.entries(O).filter(([t,o])=>o[0]>0&&(!st.lk||String(o[8])===st.lk)&&(!st.liv||OIVL.find(x=>x[0]===st.liv)[2](o))&&(!st.lsp||OSP.find(x=>x[0]===st.lsp)[2](o))&&(!st.lpc||OPC.find(x=>x[0]===st.lpc)[2](o)));
-  const k={v:0,iv:10,pc:3,chg:6,spr:13,oi:11}[st.lsort],g=o=>st.lsort==='chg'?Math.abs(o[6]):nz(o[k])?(k===13?-o[k]:o[k]):-1e9;r.sort((a,b)=>g(b[1])-g(a[1]));
+  const k={v:0,iv:10,pc:3,chg:6,spr:13,oi:11}[st.lsort],g=o=>st.lsort==='chg'?Math.abs(o[6]):st.lsort==='pc'&&o[0]<1000?-1e9:nz(o[k])?(k===13?-o[k]:o[k]):-1e9;r.sort((a,b)=>g(b[1])-g(a[1]));
   const ch=(key,list)=>`<button class="chip" data-lb="${key}" data-v="" aria-pressed="${!st[key]}">全部</button>`+list.map(([v,l])=>`<button class="chip" data-lb="${key}" data-v="${v}" aria-pressed="${st[key]===v}">${l}</button>`).join('');
   const nm=t=>IXN[t]||(CI.has(t)?C[CI.get(t)][1]:(E.find(e=>e[0]===t)||[0,O[t][7]])[1]);
   return `<div class="lb-f"><div class="themes">${ch('lk',[['0','个股'],['1','ETF'],['2','指数']])}</div><div class="themes">${ch('liv',OIVL)}</div><div class="themes">${ch('lsp',OSP)}</div><div class="themes">${ch('lpc',OPC)}</div>
-  <select class="sort" id="lsort" aria-label="排序">${[['v','成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低'],['pc','P/C 高→低'],['chg','涨跌幅绝对值 大→小']].map(([v,l])=>`<option value="${v}"${st.lsort===v?' selected':''}>${l}</option>`).join('')}</select></div>
+  <select class="sort" id="lsort" aria-label="排序">${[['v','成交量 高→低'],['iv','IV30 高→低'],['spr','买卖价差 小→大'],['oi','未平仓量 高→低'],['pc','P/C 高→低（成交 1000 张以上）'],['chg','涨跌幅绝对值 大→小']].map(([v,l])=>`<option value="${v}"${st.lsort===v?' selected':''}>${l}</option>`).join('')}</select></div>
   <p class="d-sm">共 ${r.length} 只</p>
   <div class="tbl-wrap"><table class="lbt"><thead><tr><th>代码</th><th>名称</th><th class="num">涨跌</th><th class="num">期权成交</th><th class="num">IV30</th><th class="num">P/C</th><th class="num">价差</th><th>期权链</th></tr></thead><tbody>${r.slice(0,st.lshown).map(([t,o])=>{const inSite=CI.has(t)||o[8]===2||(o[8]&&ETFSET.has(t));
     return `<tr><td class="nw">${inSite?`<button class="lbtk" data-lt="${t}">${t}</button>`:`<a class="lbtk" href="https://www.barchart.com/stocks/quotes/${encodeURIComponent(t)}/overview" target="_blank" rel="noopener">${t} ↗</a>`}${o[8]?`<span class="tg">${KN(o[8])}</span>`:''}</td><td class="nmc">${esc(nm(t))}</td><td class="num ${o[6]>=0?'up':'dn'}">${o[6]>0?'+':''}${o[6].toFixed(2)}%</td><td class="num">${fmtN(o[0])}</td><td class="num">${o[10]?Math.round(o[10])+'%':'—'}</td><td class="num">${nz(o[3])?o[3].toFixed(2):'—'}</td><td class="num">${nz(o[13])?o[13]+'%':'—'}</td><td class="nw lbl">${chainLinks(t,o[8])}</td></tr>`}).join('')}</tbody></table></div>
@@ -918,7 +931,7 @@ ${TIMES.map(([h,m,t,d])=>`<div data-t="${h*60+m}"><span class="t">${hm(h,m)}</sp
 </div>
 
 <h2 id="sec-rank">期权成交榜<small>Cboe 延时数据 · ${ODATE}</small></h2>
-<p class="txt">当天有期权成交的个股 ${Object.values(O).filter(o=>!o[8]&&o[0]).length} 只、ETF ${Object.values(O).filter(o=>o[8]===1&&o[0]).length} 只、指数 ${Object.values(O).filter(o=>o[8]===2&&o[0]).length} 个。点代码看详情。数据时间 ${OD.ts?OD.ts.slice(0,16):''}（Cboe 时间戳），是延时快照，不是实时行情。</p>
+<p class="txt">当天有期权成交的个股 ${Object.values(O).filter(o=>!o[8]&&o[0]).length} 只、ETF ${Object.values(O).filter(o=>o[8]===1&&o[0]).length} 只、指数 ${Object.values(O).filter(o=>o[8]===2&&o[0]).length} 个。点代码看详情。数据时间 ${OD.ts?OD.ts.slice(0,16):''}（美东时间，最后一笔成交），是延时快照，不是实时行情。</p>
 <div id="lb">${lbHTML()}</div>
 
 <h2 id="sec-exp">到期日规则</h2>
@@ -1099,7 +1112,7 @@ const io2=(a,cls)=>a.split(' ').map(t=>`<span class="io ${cls}">${t}</span>`).jo
 const AUDIT=`<div class="prose">
 <h2>核查记录<small>2026-11-12</small></h2>
 <p class="txt">原表格里的三份成分股名单逐只对照了维基百科当前列表，有出入的地方再用纳斯达克、标普道琼斯指数的公告和新闻报道交叉确认。下面是改了什么、没改什么。</p>
-<div class="fix"><h3>期权数据来源 <span class="tag">${ODATE}</span></h3><p>期权成交量、未平仓量、P/C、IV30、平值买卖价差和 7 天内到期日数，都是脚本从 Cboe 网站公开的延时行情接口逐只抓期权链算出来的（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）。范围是本站的公司、ETF 和指数期权（SPX、XSP、NDX、XND、RUT、MRUT、DJX、OEX、VIX）。这个接口 Cboe 没有正式说明，冷门标的的数据可能比整体晚一天，页面上会标“数据日”。ETF 列表在原来的基础上，补了 Macroption 统计的 2026 年 ETF 期权日均成交前 100 名里网站原来没有的 10 只行业、主题、商品和加密 ETF（MAGS、SILJ、AMLP、MSOS、ASHR、BNO、WEAT、GBTC、EETH、XRPC），杠杆和反向类的没有收，网站原有的 23 只杠杆、反向 ETF（TQQQ、SQQQ、SOXL、SOXS、NVDL、TSLL、UVXY、SVXY 等）也按你的要求删掉了；它们的中文说明是我写的，没有逐条核对。</p></div>
+<div class="fix"><h3>期权数据来源 <span class="tag">${ODATE}</span></h3><p>期权成交量、未平仓量、P/C、IV30、平值买卖价差和 7 天内到期日数，都是脚本从 Cboe 网站公开的延时行情接口逐只抓期权链算出来的（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）。范围是本站的公司、ETF 和指数期权（SPX、XSP、NDX、XND、RUT、MRUT、DJX、OEX、VIX）。这个接口 Cboe 没有正式说明，冷门标的的数据可能比整体晚一天，页面上会标“数据日”。ETF 列表在原来的基础上，补了 Macroption 统计的 2026 年 ETF 期权日均成交前 100 名里网站原来没有的 10 只行业、主题、商品和加密 ETF（MAGS、SILJ、AMLP、MSOS、ASHR、BNO、WEAT、GBTC、EETH、XRPC），这 10 只的中文说明是我写的，没有逐条核对。杠杆和反向类 ETF 一律不收，网站原有的 23 只（TQQQ、SQQQ、SOXL、SOXS、NVDL、TSLL、UVXY、SVXY 等）也按你的要求删掉了。</p></div>
 <div class="audit-sum"><div><b>24</b><span>处成分股归属改动</span></div><div><b>3</b><span>家已退市公司移除</span></div><div><b>1</b><span>家新上市公司补入</span></div><div><b>503</b><span>只标普500 的行业分类全部一致</span></div></div>
 
 <div class="fix"><h3>纳斯达克100：原名单停在 2026 年 2 月，10 进 10 出 <span class="tag fixd">已修正</span></h3>
