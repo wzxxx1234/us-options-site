@@ -54,6 +54,12 @@ for t,r in Q.items():
 for k in (0,1,2):
     for n,t in enumerate(sorted([t for t,o in O.items() if o[8]==k and o[0]>0],key=lambda t:-O[t][0]),1): O[t][9]=n
 print('options rows',len(O),'date',OD,'ts',OTS)
+# ---------- 市值（亿美元）：优先用这次抓数据时取到的，没有就用仓库里的 data/mcap.json ----------
+try: _mc_file=json.load(open('data/mcap.json'))['data']
+except Exception: _mc_file={}
+MC=dict(_mc_file); MC.update(L.get('mcap') or {})
+for c in C: c.append(MC.get(c[0]))
+print('mcap',sum(1 for c in C if c[8]),'of',len(C),'source',L.get('mcap_source') or 'data/mcap.json')
 # ---------- 补齐全部有期权的 ETF ----------
 def cat(n):
     u=n.upper()
