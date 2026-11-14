@@ -7,7 +7,7 @@
   - 每只标的期权链  https://cdn.cboe.com/api/global/delayed_quotes/options/<代码>.json
 这些接口 Cboe 没有正式公开说明，格式可能随时变化。
 """
-import csv, io, json, os, re, sys, time, datetime, urllib.request
+import csv, io, json, os, re, sys, time, datetime, urllib.request, urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -119,6 +119,35 @@ def earnings(days=28):
             if t and t not in out:
                 out[t] = [day.isoformat(), 'pre' if 'pre' in tm else 'post' if 'after' in tm else '']
         time.sleep(0.3)
+    return out
+
+# ---------- 新闻标题（雅虎财经公开的 RSS，只存标题、链接、来源时间） ----------
+def headlines(sym, n=4):
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime
+    url = f'https://feeds.finance.yahoo.com/rss/2.0/headline?s={urllib.parse.quote(sym)}&region=US&lang=en-US'
+    root = ET.fromstring(get(url, tries=2, timeout=30))
+    out = []
+    for it in root.iter('item'):
+        t, l, d = (it.findtext('title') or '').strip(), (it.findtext('link') or '').strip(), it.findtext('pubDate') or ''
+        try:
+            d = parsedate_to_datetime(d).astimezone(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%MZ')
+        except Exception:
+            d = ''
+        if t and l.startswith('https://'):
+            out.append([t[:160], l, d])
+        if len(out) >= n: break
+    return out
+
+def news(symbols):
+    out = {}
+    for s in ['^GSPC'] + symbols:
+        try:
+            h = headlines(s, 8 if s == '^GSPC' else 4)
+            if h: out['_mkt' if s == '^GSPC' else s] = h
+        except Exception as e:
+            print('新闻取不到', s, e, flush=True)
+        time.sleep(0.4)
     return out
 
 # ---------- 单只标的 ----------
@@ -263,11 +292,17 @@ def main():
     lasts = [r['last'][:10] for r in res.values() if r.get('last')]
     day = Counter(lasts).most_common(1)[0][0] if lasts else (ts or today.isoformat())[:10]
     mcap, mcap_src = market_caps(stocks)
+    # 新闻：7 天内有财报的 + 期权成交最多的 30 只 + 大盘
+    d0 = datetime.date.fromisoformat(day)
+    soon = [t for t, e in earn.items() if t in res and 0 <= (datetime.date.fromisoformat(e[0]) - d0).days <= 7]
+    top = sorted(res, key=lambda t: -(res[t]['cv'] + res[t]['pv']))[:30]
+    nw = news(list(dict.fromkeys(soon + top))) if not limit else {}
+    print(f'新闻 {len(nw)} 组', flush=True)
     print(f'市值 {len(mcap)} 只（{mcap_src}）', flush=True)
     out = {'source': 'Cboe delayed quotes', 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
            'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res,
            'mcap': mcap, 'mcap_source': mcap_src,
-           'earn': {t: v for t, v in earn.items() if t in res}}
+           'earn': {t: v for t, v in earn.items() if t in res}, 'news': nw}
     json.dump(out, open(os.path.join(DATA, 'options_latest.json'), 'w'), separators=(',', ':'))
     print(f'完成 {len(res)} 只，失败 {len(fail)} 只，数据时间 {ts}，用时 {time.time() - t0:.0f}s')
     if not limit:
