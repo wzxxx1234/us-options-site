@@ -92,7 +92,7 @@ DROPPED=[r[0] for r in E if is_lev(r)];E=[r for r in E if not is_lev(r)]
 for t in DROPPED: O.pop(t,None)
 for n,t in enumerate(sorted([t for t,o in O.items() if o[8]==1 and o[0]>0],key=lambda t:-O[t][0]),1): O[t][9]=n
 print('dropped leveraged',len(DROPPED),' '.join(DROPPED))
-data=json.dumps({'S':SECT,'C':C,'I':I,'E':E,'O':O,'EC':EC,'OD':{'date':OD,'ts':OTS,'n':len(O)}},ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
+data=json.dumps({'S':SECT,'C':C,'I':I,'E':E,'O':O,'EC':EC,'OD':{'date':OD,'ts':OTS,'n':len(O)},'N':L.get('news') or {}},ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
 t=open('template.html').read().replace('/*__DATA__*/',data).replace('（Cboe 时间戳）','（美东时间，最后一笔成交）')
 os.makedirs('dist',exist_ok=True)
 open('dist/美股选股手册.html','w').write(t)
