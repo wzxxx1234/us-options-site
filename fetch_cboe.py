@@ -151,6 +151,112 @@ def news(symbols):
         time.sleep(0.4)
     return out
 
+# ---------- 中文新闻 ----------
+def sina_us(n=8):
+    """新浪财经美股频道的中文滚动新闻（只留美股栏目的文章）。"""
+    j = json.loads(get('https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&num=50&page=1', tries=2, timeout=30))
+    out = []
+    for x in j['result']['data']:
+        u = x.get('url', '')
+        if '/usstock/' not in u or not u.startswith('https://'): continue
+        d = datetime.datetime.fromtimestamp(int(x['ctime']), datetime.timezone.utc).strftime('%Y-%m-%dT%H:%MZ')
+        out.append([x['title'].strip()[:120], u, d])
+        if len(out) >= n: break
+    return out
+
+def translate(titles, old=None, budget=4800):
+    """英文标题机器翻译成中文（MyMemory 免费接口，每天约 5000 字符额度）。
+    old 是上一次网站上已经翻过的 {英文: 中文}，直接复用，不占额度。翻不了的就留英文。"""
+    zh = {t: old[t] for t in titles if old and t in old}
+    todo = [t for t in dict.fromkeys(titles) if t not in zh]
+    used, batch = 0, []
+    def run(b):
+        q = urllib.parse.urlencode({'q': '\n'.join(b), 'langpair': 'en|zh-CN'})
+        j = json.loads(get('https://api.mymemory.translated.net/get?' + q, tries=2, timeout=30))
+        if j.get('quotaFinished') or int(j.get('responseStatus') or 0) != 200:
+            raise RuntimeError('额度用完或出错：' + str(j.get('responseDetails'))[:80])
+        r = j['responseData']['translatedText'].split('\n')
+        if len(r) == len(b):
+            for a, c in zip(b, r):
+                c = c.strip()
+                if c and c != a and re.search(r'[\u4e00-\u9fff]', c): zh[a] = c
+        time.sleep(1)
+    try:
+        for t in todo:
+            if used + len(t) > budget: break
+            if batch and len('\n'.join(batch + [t])) > 480:
+                run(batch); batch = []
+            batch.append(t); used += len(t)
+        if batch: run(batch)
+    except Exception as e:
+        print('翻译中断', e, flush=True)
+    return zh
+
+# ---------- 分时走势：个股和 ETF 用纳斯达克的 1 分钟线，指数用 Cboe 的；压缩成 5 分钟一个点 ----------
+# （Cboe 的个股分时文件只有热门股是当天的，冷门股常停在几天前，所以不用）
+NQ = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+      'Accept': 'application/json'}
+
+def _bars(sym, kind, day):
+    """返回 [(美东分钟数, 价格)] 和昨收（取不到就是 None）。"""
+    if kind == 2 or '.' in sym:   # 指数；以及纳斯达克查不到的 BRK.B 这类带点的代码（Cboe 的可能不是当天的，日期不对就不画）
+        j = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/charts/intraday/{"_" if kind == 2 else ""}{sym}.json', tries=3, timeout=60))
+        return [(int(b['datetime'][11:13]) * 60 + int(b['datetime'][14:16]), (b.get('price') or {}).get('close'))
+                for b in j.get('data', []) if b.get('datetime', '')[:10] == day], None
+    q = urllib.parse.quote(sym.replace('.', '/'), safe='')
+    for k in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(
+                    f'https://api.nasdaq.com/api/quote/{q}/chart?assetclass={"etf" if kind == 1 else "stocks"}', headers=NQ), timeout=30) as r:
+                j = json.loads(r.read()); break
+        except Exception:
+            if k == 2: raise
+            time.sleep(3 * (k + 1))
+    d = j.get('data') or {}
+    out = []
+    for b in d.get('chart') or []:
+        t = datetime.datetime.fromtimestamp(b['x'] / 1000, datetime.timezone.utc)   # 纳斯达克的时间戳是“美东钟点当成 UTC”
+        if t.date().isoformat() == day: out.append((t.hour * 60 + t.minute, b.get('y')))
+    try:
+        prev = float(str(d.get('previousClose', '')).replace('$', '').replace(',', ''))
+    except ValueError:
+        prev = None
+    return out, prev
+
+def intraday_one(sym, kind, day, px, chg):
+    bars, prev = _bars(sym, kind, day)
+    prev = prev or (px / (1 + chg / 100) if px and chg > -100 else 0)
+    if not prev: return None
+    pts = [None] * 79   # 9:30 起每 5 分钟一格，最后一格是 16:00 收盘
+    last = -1
+    for m, c in bars:
+        if not c or not 570 < m <= 960: continue   # 只要正常交易时段
+        i = min((m - 571) // 5, 77)
+        pts[i] = c; last = max(last, i)
+    if last < 6: return None
+    pts[last + 1] = px          # 收盘价接在最后（提前收盘的日子就在中间结束）
+    for i in range(1, last + 2):  # 中间没成交的格子沿用前一格
+        if pts[i] is None: pts[i] = pts[i - 1]
+    if pts[0] is None:
+        k = next(i for i, v in enumerate(pts) if v is not None); pts[:k] = [pts[k]] * k
+    # 存成相对昨收的万分比整数，文件小很多；网页再用昨收换算回价格
+    return [round(prev, 4), [round((v / prev - 1) * 1e4) for v in pts[:last + 2]]]
+
+def intraday(res, day):
+    out, t0, fails = {}, time.time(), []
+    with ThreadPoolExecutor(6) as ex:
+        fut = {ex.submit(intraday_one, s, r['k'], day, r['px'], r['chg']): s
+               for s, r in res.items() if r.get('px')}
+        for f in as_completed(fut):
+            try:
+                v = f.result()
+                if v: out[fut[f]] = v
+            except Exception as e:
+                fails.append(fut[f])
+    if fails: print(f'分时取不到 {len(fails)} 只：{" ".join(sorted(fails)[:40])}', flush=True)
+    json.dump({'d': day, 's': out}, open(os.path.join(DATA, 'intraday.json'), 'w'), separators=(',', ':'))
+    print(f'分时走势 {len(out)} 只，用时 {time.time() - t0:.0f}s', flush=True)
+
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
 
@@ -302,8 +408,31 @@ def main():
     d0 = datetime.date.fromisoformat(day)
     soon = [t for t, e in earn.items() if t in res and 0 <= (datetime.date.fromisoformat(e[0]) - d0).days <= 7]
     top = sorted(res, key=lambda t: -(res[t]['cv'] + res[t]['pv']))[:30]
-    nw = news(list(dict.fromkeys(soon + top))) if not limit else {}
-    print(f'新闻 {len(nw)} 组', flush=True)
+    nw = news(list(dict.fromkeys(soon + top))) if not limit or '--news' in sys.argv else {}
+    if nw:
+        # 大盘新闻换成新浪的中文新闻；个股新闻把英文标题翻成中文（7 天内财报的优先），翻不了的保留英文
+        try:
+            cn = sina_us()
+            if len(cn) >= 3: nw['_mkt'] = cn
+        except Exception as e:
+            print('新浪新闻取不到，大盘新闻用英文', e, flush=True)
+        old = {}
+        try:
+            for L in json.load(open(os.path.join(DATA, 'prev_news.json'))).get('news', {}).values():
+                for x in L:
+                    if len(x) > 3 and x[3]: old[x[0]] = x[3]
+        except Exception:
+            pass
+        order = [t for t in dict.fromkeys(soon + top) if t in nw]
+        en = [x[0] for t in order for x in nw[t][:3]] + [x[0] for t in order for x in nw[t][3:]]
+        zh = translate(en, old)
+        for t, L in nw.items():
+            if t == '_mkt' and L and re.search(r'[\u4e00-\u9fff]', L[0][0]): continue
+            for x in L:
+                if x[0] in zh: x.append(zh[x[0]])
+        print(f'新闻 {len(nw)} 组，翻译 {len(zh)}/{len(en)} 条（复用 {len([t for t in en if t in old])} 条）', flush=True)
+    else:
+        print('新闻 0 组', flush=True)
     print(f'市值 {len(mcap)} 只（{mcap_src}）', flush=True)
     out = {'source': 'Cboe delayed quotes', 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
            'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res,
@@ -313,6 +442,8 @@ def main():
     print(f'完成 {len(res)} 只，失败 {len(fail)} 只，数据时间 {ts}，用时 {time.time() - t0:.0f}s')
     if not limit:
         update_history(day, res)
+    if not limit or '--intraday' in sys.argv:
+        intraday(res, day)
     # --min N：成功少于 N 只就报错退出，不生成、不发布残缺的网页
     need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
     if len(res) < need:
