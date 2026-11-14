@@ -51,6 +51,8 @@ jobs:
           if [ "$MODE" = "rebuild" ] && curl -fsSL "$PAGES_URL/options_latest.json" -o src/data/options_latest.json; then
             echo "沿用网站上一次的数据"
             curl -fsSL "$PAGES_URL/intraday.json" -o src/data/intraday.json || true
+            # 仓库里手动上传的数据比网站上的新，就用上传的（下一次完整更新后网站上的更新，又会用回网站的）
+            python3 -c 'import json,os,shutil;[(shutil.copy(f,"src/data/"+f),print("用仓库里上传的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d")) if os.path.exists(f) and json.load(open(f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
           elif [ "$MODE" = "quick" ]; then
             python3 src/fetch_cboe.py --limit 60 --min 50 --intraday
           else
