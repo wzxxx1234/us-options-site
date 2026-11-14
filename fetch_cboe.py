@@ -72,6 +72,32 @@ def weeklys():
         if r and re.fullmatch(r'[A-Z][A-Z.]{0,6}', r[0]): sec.add(r[0])
     return etp, eq
 
+# ---------- 市值（纳斯达克网站公开的股票筛选器，单位：亿美元） ----------
+def market_caps(tickers):
+    """先从纳斯达克取最新市值，取不到的用仓库里的 data/mcap.json 补上。"""
+    out, src = {}, 'data/mcap.json'
+    try:
+        req = urllib.request.Request('https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=10000&download=true',
+                                     headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+                                              'Accept': 'application/json'})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            rows = json.loads(r.read())['data']['rows']
+        for row in rows:
+            try:
+                v = float(row.get('marketCap') or 0)
+            except ValueError:
+                v = 0
+            if v > 0:
+                out[row['symbol'].replace('/', '.')] = round(v / 1e8, 1)
+        src = 'Nasdaq stock screener'
+    except Exception as e:
+        print('纳斯达克市值取不到，改用 data/mcap.json：', e, flush=True)
+    try:
+        old = json.load(open(os.path.join(DATA, 'mcap.json')))['data']
+    except Exception:
+        old = {}
+    return {t: out.get(t) or old.get(t) for t in tickers if out.get(t) or old.get(t)}, src
+
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
 
@@ -155,8 +181,11 @@ def main():
     from collections import Counter
     lasts = [r['last'][:10] for r in res.values() if r.get('last')]
     day = Counter(lasts).most_common(1)[0][0] if lasts else (ts or today.isoformat())[:10]
+    mcap, mcap_src = market_caps(stocks)
+    print(f'市值 {len(mcap)} 只（{mcap_src}）', flush=True)
     out = {'source': 'Cboe delayed quotes', 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
-           'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res}
+           'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res,
+           'mcap': mcap, 'mcap_source': mcap_src}
     json.dump(out, open(os.path.join(DATA, 'options_latest.json'), 'w'), separators=(',', ':'))
     print(f'完成 {len(res)} 只，失败 {len(fail)} 只，数据时间 {ts}，用时 {time.time() - t0:.0f}s')
     # --min N：成功少于 N 只就报错退出，不生成、不发布残缺的网页
