@@ -1,0 +1,247 @@
+{{Short description|List of companies in the Nasdaq-100}}
+{{Use American English|date=August 2026}}
+{{Use mdy dates|date=August 2026}}
+{{for|a list of previous components of the index|Historical components of the Nasdaq-100}}
+
+The [[Nasdaq-100]] is a [[stock market index]] made up of equity securities issued by 100 of the largest non-financial companies listed on the [[Nasdaq]] stock exchange. The Nasdaq-100 index is a [[public float]] weighted/[[capitalization-weighted index]], with a maximum weight of 24% for the largest component. An updated weighting of each component is available [https://www.invesco.com/qqq-etf/en/about.html online]
+
+==Nasdaq-100 component stocks ==
+<!-- NASDAQ uses ICB officially as its industry/sector classification system. Please refer to the stock details in the NASDAQ website for the exact sector and industry classification for component changes. -->
+As of October 22, 2026, the index comprised 101 securities issued by 100 companies, as [[Alphabet Inc.]] is included with both its Class A and Class C shares.<ref name="nasdaq-ndx">{{Cite web |url=https://www.nasdaq.com/market-activity/quotes/nasdaq-ndx-index |title=Nasdaq-100 Index (NDX) |publisher=Nasdaq |access-date=October 24, 2026}}</ref>
+{| class="wikitable sortable" id="constituents"
+|-
+! Ticker !! Company !! [[International Securities Identification Number|ISIN]] !! [[Industry Classification Benchmark|ICB]] Industry<ref name=":23">{{Cite web |date=September 1, 2020 |title=Nasdaq Migration to New ICB Codes for NQGI Family Sector Indexes and Nasdaq Composite Index (COMP) & Notice Plan for Remaining Indexes |url=https://indexes.nasdaqomx.com/docs/Nasdaq_Migration_ICB_COMP_NQGI.FINAL_Mapping.pdf |website=NASDAQ}}</ref>!! [[Industry Classification Benchmark|ICB]] Subsector<ref name=":23" />
+|-
+| ADBE || [[Adobe Inc.]] || {{ISIN|sl=n|US00724F1012}} || Technology || Software
+|-
+| AMD || [[AMD|Advanced Micro Devices]] || {{ISIN|sl=n|US0079031078}} || Technology || Semiconductors
+|-
+| ABNB || [[Airbnb]] || {{ISIN|sl=n|US0090661010}} || Consumer Discretionary || Diversified Commercial Services
+|-
+| ALNY || [[Alnylam Pharmaceuticals]] || {{ISIN|sl=n|US02043Q1076}} || Health Care || Biotechnology
+|-
+| GOOGL || [[Alphabet Inc.]] (Class A) || {{ISIN|sl=n|US02079K3059}} || Technology || Software
+|-
+| GOOG || [[Alphabet Inc.]] (Class C) || {{ISIN|sl=n|US02079K1079}} || Technology || Software
+|-
+| AMZN || [[Amazon (company)|Amazon]] || {{ISIN|sl=n|US0231351067}} || Consumer Discretionary || Catalog/Specialty Distribution
+|-
+| AEP || [[American Electric Power]] || {{ISIN|sl=n|US0255371017}} || Utilities || Electric Utilities
+|-
+| AMGN || [[Amgen]] || {{ISIN|sl=n|US0311621009}} || Health Care || Biotechnology
+|-
+| ADI || [[Analog Devices]] || {{ISIN|sl=n|US0326541051}} || Technology || Semiconductors
+|-
+| AAPL || [[Apple Inc.]] || {{ISIN|sl=n|US0378331005}} || Technology || Computer Hardware
+|-
+| AMAT || [[Applied Materials]] || {{ISIN|sl=n|US0382221051}} || Technology || Semiconductors
+|-
+| APP || [[AppLovin]] || {{ISIN|sl=n|US03831W1080}} || Technology || Software
+|-
+| ARM || [[Arm Holdings]] || {{ISIN|sl=n|US0420682058}} || Technology || Semiconductors
+|-
+| ASML || [[ASML Holding]] || {{ISIN|sl=n|USN070592100}} || Technology || Industrial Machinery
+|-
+| ALAB || [[Astera Labs]] || {{ISIN|sl=n|US04626A1034}} || Technology || Semiconductors
+|-
+| ADSK || [[Autodesk]] || {{ISIN|sl=n|US0527691069}} || Technology || Software
+|-
+| ADP || [[ADP (company)|Automatic Data Processing]] || {{ISIN|sl=n|US0530151036}} || Industrials || Diversified Commercial Services
+|-
+| AXON || [[Axon Enterprise]] || {{ISIN|sl=n|US05464C1018}} || Industrials || Ordnance & Accessories
+|-
+| BKR || [[Baker Hughes]] || {{ISIN|sl=n|US05722G1004}} || Energy || Oil Equipment & Services
+|-
+| BKNG || [[Booking Holdings]] || {{ISIN|sl=n|US09857L1089}} || Consumer Discretionary || Transportation Services
+|-
+| AVGO || [[Broadcom]] || {{ISIN|sl=n|US11135F1012}} || Technology || Semiconductors
+|-
+| CDNS || [[Cadence Design Systems]] || {{ISIN|sl=n|US1273871087}} || Technology || Software
+|-
+| CTAS || [[Cintas]] || {{ISIN|sl=n|US1729081059}} || Industrials || Garments & Clothing
+|-
+| CSCO || [[Cisco]] || {{ISIN|sl=n|US17275R1023}} || Telecommunications || Computer Communications Equipment
+|-
+| CCEP || [[Coca-Cola Europacific Partners]] || {{ISIN|sl=n|GB00BDCPN049}} || Consumer Staples || Soft Drinks
+|-
+| CMCSA || [[Comcast]] || {{ISIN|sl=n|US20030N1019}} || Telecommunications || Cable & Other Pay Television Services
+|-
+| CEG || [[Constellation Energy]] || {{ISIN|sl=n|US21037T1097}} || Utilities || Electric Utilities
+|-
+| CPRT || [[Copart]] || {{ISIN|sl=n|US2172041061}} || Consumer Discretionary || Retail
+|-
+| CRWV || [[CoreWeave]] || {{ISIN|sl=n|US21873S1087}} || Technology || Computer Services
+|-
+| COST || [[Costco]] || {{ISIN|sl=n|US22160K1051}} || Consumer Discretionary || Department/Specialty Retail Stores
+|-
+| CRWD || [[CrowdStrike]] || {{ISIN|sl=n|US22788C1053}} || Technology || Software
+|-
+| CSX || [[CSX Corporation]] || {{ISIN|sl=n|US1264081035}} || Industrials || Railroads
+|-
+| DDOG || [[Datadog]] || {{ISIN|sl=n|US23804L1035}} || Technology || Software
+|-
+| DXCM || [[DexCom]] || {{ISIN|sl=n|US2521311074}} || Health Care || Medical/Dental Instruments
+|-
+| FANG || [[Diamondback Energy]] || {{ISIN|sl=n|US25278X1090}} || Energy || Oil & Gas Production
+|-
+| DASH || [[DoorDash]] || {{ISIN|sl=n|US25809K1051}} || Technology || Software
+|-
+| EXC || [[Exelon]] || {{ISIN|sl=n|US30161N1019}} || Utilities || Power Generation
+|-
+| FAST || [[Fastenal]] || {{ISIN|sl=n|US3119001044}} || Industrials || Construction & Materials
+|-
+| FER || [[Ferrovial]] || {{ISIN|sl=n|NL0015001FS8}} || Industrials|| Military, Government, Technical
+|-
+| FTNT || [[Fortinet]] || {{ISIN|sl=n|US34959E1091}} || Technology || Computer Peripheral Equipment
+|-
+| GEHC || [[GE HealthCare]] || {{ISIN|sl=n|US36266G1076}} || Health Care || Medical Electronics
+|-
+| GILD || [[Gilead Sciences]] || {{ISIN|sl=n|US3755581036}} || Health Care || Biotechnology
+|-
+| HONA || [[Honeywell Aerospace]] || {{ISIN|sl=n|US43849R1059}} || Industrials || Aerospace
+|-
+| HON || [[Honeywell|Honeywell Technologies]] || {{ISIN|sl=n|US4385162056}} || Industrials || Diversified Industrials
+|-
+| IDXX || [[Idexx Laboratories]] || {{ISIN|sl=n|US45168D1046}} || Health Care || Biotechnology
+|-
+| INTC || [[Intel]] || {{ISIN|sl=n|US4581401001}} || Technology || Semiconductors
+|-
+| INTU || [[Intuit]] || {{ISIN|sl=n|US4612021034}} || Technology || Computer Software
+|-
+| ISRG || [[Intuitive Surgical]] || {{ISIN|sl=n|US46120E6023}} || Health Care || Industrial Specialties
+|-
+| KDP || [[Keurig Dr Pepper]] || {{ISIN|sl=n|US49271V1008}} || Consumer Staples || Soft Drinks
+|-
+| KLAC || [[KLA Corporation]] || {{ISIN|sl=n|US4824801009}} || Technology || Electronic Components
+|-
+| LRCX || [[Lam Research]] || {{ISIN|sl=n|US5128073062}} || Technology || Industrial Machinery
+|-
+| LIN || [[Linde plc]] || {{ISIN|sl=n|IE000S9YS762}} || Basic Materials || Major Chemicals
+|-
+| LITE || [[Lumentum]] || {{ISIN|sl=n|US55024U1097}} || Technology || Communication Equipment
+|-
+| MAR || [[Marriott International]] || {{ISIN|sl=n|US5719032022}} || Consumer Discretionary || Hotels/Resorts
+|-
+| MRVL || [[Marvell Technology]] || {{ISIN|sl=n|US5738741041}} || Technology || Semiconductors
+|-
+| MELI || [[Mercado Libre]] || {{ISIN|sl=n|US58733R1023}} || Consumer Discretionary || Catalog/Specialty Distribution
+|-
+| META || [[Meta Platforms]] || {{ISIN|sl=n|US30303M1027}} || Technology || Software
+|-
+| MCHP || [[Microchip Technology]] || {{ISIN|sl=n|US5950171042}} || Technology || Semiconductors
+|-
+| MU || [[Micron Technology]] || {{ISIN|sl=n|US5951121038}} || Technology || Semiconductors
+|-
+| MSFT || [[Microsoft]] || {{ISIN|sl=n|US5949181045}} || Technology || Software
+|-
+| MSTR || [[MicroStrategy]] || {{ISIN|sl=n|US5949724083}} || Technology || Software
+|-
+| MRNA || [[Moderna]] || {{ISIN|sl=n|US60770K1079}} || Health Care || Biotechnology
+|-
+| MDLZ || [[Mondelez International]] || {{ISIN|sl=n|US6092071058}} || Consumer Staples || Packaged Foods
+|-
+| MPWR || [[Monolithic Power Systems]] || {{ISIN|sl=n|US6098391054}} || Technology || Semiconductors
+|-
+| MNST || [[Monster Beverage]] || {{ISIN|sl=n|US61174X1090}} || Consumer Staples || Soft Drinks
+|-
+| NBIS || [[Nebius Group]] || {{ISIN|sl=n|NL0009805522}} || Technology || Computer Services
+|-
+| NFLX || [[Netflix, Inc.]] || {{ISIN|sl=n|US64110L1061}} || Consumer Discretionary || Consumer Electronics
+|-
+| NVDA || [[Nvidia]] || {{ISIN|sl=n|US67066G1040}} || Technology || Semiconductors
+|-
+| NXPI || [[NXP Semiconductors]] || {{ISIN|sl=n|NL0009538784}} || Technology || Semiconductors
+|-
+| ORLY || [[O'Reilly Automotive]] || {{ISIN|sl=n|US67103H1077}} || Consumer Discretionary || Specialty Retailers
+|-
+| ODFL || [[Old Dominion Freight Line]] || {{ISIN|sl=n|US6795801009}} || Industrials || Trucking
+|-
+| PCAR || [[Paccar]] || {{ISIN|sl=n|US6937181088}} || Consumer Discretionary || Motor Vehicles
+|-
+| PLTR || [[Palantir Technologies]] || {{ISIN|sl=n|US69608A1088}} || Technology || Software
+|-
+| PANW || [[Palo Alto Networks]] || {{ISIN|sl=n|US6974351057}} || Technology || Computer Peripheral Equipment
+|-
+| PAYX || [[Paychex]] || {{ISIN|sl=n|US7043261079}} || Industrials || Diversified Commercial Services
+|-
+| PYPL || [[PayPal]] || {{ISIN|sl=n|US70450Y1038}} || Industrials || Diversified Commercial Services
+|-
+| PDD || [[Pinduoduo|PDD Holdings]] || {{ISIN|sl=n|US7223041028}} || Technology || EDP Services
+|-
+| PEP || [[PepsiCo]] || {{ISIN|sl=n|US7134481081}} || Consumer Staples || Soft Drinks
+|-
+| QCOM || [[Qualcomm]] || {{ISIN|sl=n|US7475251036}} || Technology || Semiconductors
+|-
+| REGN || [[Regeneron Pharmaceuticals]] || {{ISIN|sl=n|US75886F1075}} || Health Care || Biotechnology
+|-
+| RKLB || [[Rocket Lab]] || {{ISIN|sl=n|US7731211089}} || Industrials || Aerospace
+|-
+| ROP || [[Roper Technologies]] || {{ISIN|sl=n|US7766961061}} || Technology || Software
+|-
+| ROST || [[Ross Stores]] || {{ISIN|sl=n|US7782961038}} || Consumer Discretionary || Clothing/Shoe/Accessory Stores
+|-
+| SNDK || [[Sandisk]] || {{ISIN|sl=n|US80004C2008}} || Technology || Electronic Components
+|-
+| STX || [[Seagate Technology]] || {{ISIN|sl=n|IE00BKVD2N49}} || Technology || Electronic Components
+|-
+| SHOP || [[Shopify]] || {{ISIN|sl=n|CA82509L1076}} || Technology || Software
+|-
+| SPCX || [[SpaceX]] || {{ISIN|sl=n|US84615Q1031}} || Telecommunications || Telecommunications Services
+|-
+| SBUX || [[Starbucks]] || {{ISIN|sl=n|US8552441094}} || Consumer Discretionary || Restaurants
+|-
+| SNPS || [[Synopsys]] || {{ISIN|sl=n|US8716071076}} || Technology || Software
+|-
+| TMUS || [[T-Mobile US]] || {{ISIN|sl=n|US8725901040}} || Telecommunications || Telecommunications Services
+|-
+| TTWO || [[Take-Two Interactive]] || {{ISIN|sl=n|US8740541094}} || Consumer Discretionary || Miscellaneous Amusement & Recreation Services
+|-
+| TER || [[Teradyne]] || {{ISIN|sl=n|US8807701029}} || Technology || Semiconductors
+|-
+| TSLA || [[Tesla, Inc.]] || {{ISIN|sl=n|US88160R1014}} || Consumer Discretionary || Automobiles & Parts
+|-
+| TXN || [[Texas Instruments]] || {{ISIN|sl=n|US8825081040}} || Technology || Semiconductors
+|-
+| TRI || [[Thomson Reuters]] || {{ISIN|sl=n|CA8849038812}} || Technology || Software
+|-
+| VRTX || [[Vertex Pharmaceuticals]] || {{ISIN|sl=n|US92532F1003}} || Health Care || Biotechnology
+|-
+| WMT || [[Walmart]] || {{ISIN|sl=n|US9311421039}} || Consumer Discretionary || Department/Specialty Retail Stores
+|-
+| WDC || [[Western Digital]] || {{ISIN|sl=n|US9581021055}} || Technology || Electronic Components
+|-
+| WDAY || [[Workday, Inc.]] || {{ISIN|sl=n|US98138H1014}} || Technology || Software
+|-
+| XEL || [[Xcel Energy]] || {{ISIN|sl=n|US98389B1008}} || Utilities || Conventional Electricity
+|}
+
+===Foreign components===
+The Nasdaq-100 includes companies incorporated outside the United States as follows:
+* Canada: [[Shopify]], [[Thomson Reuters]]
+* Cayman Islands: [[Pinduoduo|PDD Holdings]]
+* Ireland: [[Linde plc]], [[Seagate Technology]]
+* The Netherlands: [[ASML Holding]], [[Ferrovial]], [[Nebius Group]], [[NXP Semiconductors]]
+* United Kingdom: [[Arm Holdings]], [[Coca-Cola Europacific Partners]]
+
+==See also==
+* [[Historical components of the Nasdaq-100]]
+
+==References==
+{{reflist}}
+
+==External links==
+* {{Official website|https://www.nasdaq.com/solutions/global-indexes/nasdaq-100}}
+* [https://www.nasdaq.com/market-activity/quotes/Nasdaq-100-Index-Components Components]
+* [https://www.nasdaq.com/market-activity/indexes Nasdaq Stock Market Indices]
+
+{{portal|Companies|Lists}}
+{{Nasdaq-100}}
+{{Nasdaqomx}}
+{{Stock Market Indices}}
+{{Stock market indexes}}
+{{North and South American Stock market indices}}
+
+[[Category:1985 establishments in the United States]]
+[[Category:American stock market indices]]
+[[Category:Nasdaq]]
+[[Category:Companies in the Nasdaq-100| ]]

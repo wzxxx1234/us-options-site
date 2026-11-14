@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+# 生成出来的网页（GitHub 上每次自动生成，不用存）
+/index.html
+/intraday.json
+src/dist/
+# 临时文件
+src/data/fetch.log
+src/data/prev_news.json
+上传/
+*.webloc

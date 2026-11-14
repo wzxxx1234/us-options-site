@@ -1,0 +1,281 @@
+{{Short description|List of companies in the Dow Jones Industrial Average}}
+{{Use American English|date=August 2026}}
+{{Use mdy dates|date=August 2026}}
+{{for|a list of previous components of the index|Historical components of the Dow Jones Industrial Average}}
+
+The [[Dow Jones Industrial Average]] (DJIA) is a [[stock market index]] tracking the stock performance of 30 large companies listed on [[stock exchange]]s in the [[United States]]. The index is a [[price-weighted index]]; stocks with the highest price per share have the highest weighting in the index.<ref name=data>{{cite web | url=https://www.spglobal.com/spdji/en/indices/equity/dow-jones-industrial-average/#data | title=Dow Jones Industrial Average® | publisher=[[S&P Global]]}}</ref> An updated weighting of each component is available [https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-dow-jones-industrial-average-etf-trust-dia online].
+
+==Components==
+The following are the components of the index; Honeywell's ISIN changed on June 29, 2026, with its reverse stock split:<ref>{{Cite web |url=https://www.nasdaqtrader.com/TraderNews.aspx?id=ECA2026-399 |title=Equity Corporate Actions Alert #2026-399: Spin-off and Reverse Split information for Honeywell International Inc. (HON) |publisher=Nasdaq |access-date=October 24, 2026}}</ref><ref>{{Cite web | url=https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-dow-jones-industrial-average-etf-trust-dia | title=DIA: State Street® SPDR® Dow Jones Industrial Average® | work=[[State Street Corporation]]}}</ref>
+{| class="wikitable sortable sticky-header" id="constituents"
+|-
+!scope="col"| Company
+!scope="col"| Exchange
+!scope="col"| Symbol
+!scope="col"| [[International Securities Identification Number|ISIN]]
+!scope="col"| Sector
+!scope="col"| Date added
+!scope="col" class=unsortable| Notes
+|-
+!scope="row"| [[3M]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|MMM}}
+| {{ISIN|sl=n|US88579Y1010}}
+| Industrials
+| 1976-08-09
+| As Minnesota Mining and Manufacturing
+|-
+!scope="row"| [[Alphabet Inc.|Alphabet]]<br/>(Class A)
+| [[NASDAQ]]
+| {{NASDAQ link|GOOGL}}
+| {{ISIN|sl=n|US02079K3059}}
+| Communication Services
+| 2026-06-29
+|
+|-
+!scope="row"| [[American Express]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|AXP}}
+| {{ISIN|sl=n|US0258161092}}
+| Financials
+| 1982-08-30
+|
+|-
+!scope="row"| [[Amgen]]
+| [[NASDAQ]]
+| {{NASDAQ link|AMGN}}
+| {{ISIN|sl=n|US0311621009}}
+| Health Care
+| 2020-08-31
+|
+|-
+!scope="row"| [[Amazon (company)|Amazon]]
+| [[NASDAQ]]
+| {{NASDAQ link|AMZN}}
+| {{ISIN|sl=n|US0231351067}}
+| Consumer Discretionary
+| 2024-02-26
+|
+|-
+!scope="row"| [[Apple Inc.|Apple]]
+| [[NASDAQ]]
+| {{NASDAQ link|AAPL}}
+| {{ISIN|sl=n|US0378331005}}
+| Information Technology
+| 2015-03-19
+|
+|-
+!scope="row"| [[Boeing]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|BA}}
+| {{ISIN|sl=n|US0970231058}}
+| Industrials
+| 1987-03-12
+|
+|-
+!scope="row"| [[Caterpillar Inc.|Caterpillar]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|CAT}}
+| {{ISIN|sl=n|US1491231015}}
+| Industrials
+| 1991-05-06
+|
+|-
+!scope="row"| [[Chevron Corporation|Chevron]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|CVX}}
+| {{ISIN|sl=n|US1667641005}}
+| Energy
+| 2008-02-19
+| Also 1930-07-18 to 1999-11-01
+|-
+!scope="row"| [[Cisco]]
+| [[NASDAQ]]
+| {{NASDAQ link|CSCO}}
+| {{ISIN|sl=n|US17275R1023}}
+| Information Technology
+| 2009-06-08
+|
+|-
+!scope="row"| [[The Coca-Cola Company|Coca-Cola]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|KO}}
+| {{ISIN|sl=n|US1912161007}}
+| Consumer Staples
+| 1987-03-12
+| Also 1932-05-26 to 1935-11-20
+|-
+!scope="row"| [[The Walt Disney Company|Disney]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|DIS}}
+| {{ISIN|sl=n|US2546871060}}
+| Communication Services
+| 1991-05-06
+|
+|-
+!scope="row"| [[Goldman Sachs]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|GS}}
+| {{ISIN|sl=n|US38141G1040}}
+| Financials
+| 2013-09-23
+|
+|-
+!scope="row"| [[Home Depot]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|HD}}
+| {{ISIN|sl=n|US4370761029}}
+| Consumer Discretionary
+| 1999-11-01
+|
+|-
+!scope="row"| [[Honeywell|Honeywell Technologies]]
+| [[NASDAQ]]
+| {{NASDAQ link|HON}}
+| {{ISIN|sl=n|US4385162056}}
+| Industrials
+| 2020-08-31
+| Also 1925-12-07 to 2008-02-19 under various names, including Allied Chemical and Dye, Allied Chemical, AlliedSignal and Honeywell
+|-
+!scope="row"| [[IBM]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|IBM}}
+| {{ISIN|sl=n|US4592001014}}
+| Information Technology
+| 1979-06-29
+| Also 1932-05-26 to 1939-03-04
+|-
+!scope="row"| [[Johnson & Johnson]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|JNJ}}
+| {{ISIN|sl=n|US4781601046}}
+| Health Care
+| 1997-03-17
+|
+|-
+!scope="row"| [[JPMorgan Chase]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|JPM}}
+| {{ISIN|sl=n|US46625H1005}}
+| Financials
+| 1991-05-06
+|
+|-
+!scope="row"| [[McDonald's]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|MCD}}
+| {{ISIN|sl=n|US5801351017}}
+| Consumer Discretionary
+| 1985-10-30
+|
+|-
+!scope="row"| [[Merck & Co.|Merck]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|MRK}}
+| {{ISIN|sl=n|US58933Y1055}}
+| Health Care
+| 1979-06-29
+|
+|-
+!scope="row"| [[Microsoft]]
+| [[NASDAQ]]
+| {{NASDAQ link|MSFT}}
+| {{ISIN|sl=n|US5949181045}}
+| Information Technology
+| 1999-11-01
+|
+|-
+!scope="row"| [[Nike, Inc.|Nike]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|NKE}}
+| {{ISIN|sl=n|US6541061031}}
+| Consumer Discretionary
+| 2013-09-23
+|
+|-
+!scope="row"| [[Nvidia]]
+| [[NASDAQ]]
+| {{NASDAQ link|NVDA}}
+| {{ISIN|sl=n|US67066G1040}}
+| Information Technology
+| 2024-11-08
+|
+|-
+!scope="row"| [[Procter & Gamble]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|PG}}
+| {{ISIN|sl=n|US7427181091}}
+| Consumer Staples
+| 1932-05-26
+|
+|-
+!scope="row"| [[Salesforce]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|CRM}}
+| {{ISIN|sl=n|US79466L3024}}
+| Information Technology
+| 2020-08-31
+| 
+|-
+!scope="row"| [[Sherwin-Williams]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|SHW}}
+| {{ISIN|sl=n|US8243481061}}
+| Materials
+| 2024-11-08
+| 
+|-
+!scope="row"| [[The Travelers Companies|Travelers]] 
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|TRV}}
+| {{ISIN|sl=n|US89417E1091}}
+| Financials
+| 2009-06-08
+|
+|-
+!scope="row"| [[UnitedHealth Group]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|UNH}}
+| {{ISIN|sl=n|US91324P1021}}
+| Health Care
+| 2012-09-24
+|
+|-
+!scope="row"| [[Visa Inc.|Visa]]
+| [[New York Stock Exchange|NYSE]]
+| {{NYSE link|V}}
+| {{ISIN|sl=n|US92826C8394}}
+| Financials
+| 2013-09-23
+|
+|-
+!scope="row"| [[Walmart]]
+| [[NASDAQ]]
+| {{NASDAQ link|WMT}}
+| {{ISIN|sl=n|US9311421039}}
+| Consumer Staples
+| 1997-03-17
+|
+
+|}
+
+==See also==
+* [[Historical components of the Dow Jones Industrial Average]]
+* [[Closing milestones of the Dow Jones Industrial Average]]
+* [[List of largest daily changes in the Dow Jones Industrial Average]]
+
+==References==
+{{Reflist}}
+{{DEFAULTSORT:List of Dow Jones Industrial Average companies}}
+
+{{Dow Jones Industrial Average companies}}
+{{North and South American Stock market indices}}
+{{Stock market indices}}
+{{News Corporation}}
+{{Authority control}}
+
+[[Category:Dow Jones Industrial Average| ]]
+[[Category:American stock market indices|Dow Jones Industrial Average companies]]
+[[Category:Dow Jones & Company]]
+[[Category:S&P Dow Jones Indices]]
+[[Category:Lists of companies|Dow Jones Industrial Average companies]]
