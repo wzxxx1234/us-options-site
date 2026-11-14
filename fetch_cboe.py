@@ -138,6 +138,18 @@ def main():
                 fail.append(s)
             if n % 200 == 0: print(f'  {n}/{len(uni)}  {time.time() - t0:.0f}s', flush=True)
 
+    # 第一轮失败的（多半是 Cboe 临时限流），最后再一只一只慢慢重试一次
+    if fail:
+        print(f'重试 {len(fail)} 只：{" ".join(fail)}', flush=True)
+        kinds = {s: k for q, s, k in uni}
+        for s in list(fail):
+            time.sleep(5)
+            try:
+                r = summarize(('_' + s) if kinds[s] == 2 else s, today, s); r['k'] = kinds[s]; r['name'] = ''
+                res[s] = r; fail.remove(s)
+            except Exception:
+                pass
+
     ts = max((r['ts'] for r in res.values() if r.get('ts')), default=None)
     # 数据日 = 大多数标的最后一笔成交的日期（美东），不是 Cboe 文件生成时间（UTC）
     from collections import Counter
