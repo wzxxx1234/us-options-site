@@ -20,7 +20,8 @@ def get(url, tries=6, timeout=90):
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
                 return r.read()
         except Exception as e:
-            if k == tries - 1:
+            # 403/404 = Cboe 明确没有这只的数据（比如已退市或不提供），重试也没用，直接放弃
+            if k == tries - 1 or getattr(e, 'code', 0) in (403, 404):
                 raise
             # 429 = 请求太频繁，多等一会儿
             time.sleep((20 if getattr(e, 'code', 0) == 429 else 3) * (k + 1))
@@ -251,7 +252,8 @@ def main():
     limit = int(sys.argv[sys.argv.index('--limit') + 1]) if '--limit' in sys.argv else 0
     t0 = time.time()
     site = json.load(open(os.path.join(DATA, 'data.json')))
-    stocks = sorted({r[0] for r in site['全部公司'][1:]} | {'SPCX'})
+    # 已退市、网站上已经去掉的公司不抓（和 build.py 保持一致）
+    stocks = sorted(({r[0] for r in site['全部公司'][1:]} | {'SPCX'}) - {'EA', 'WBD', 'KVUE'})
     extra = json.load(open(os.path.join(DATA, 'etf_extra.json')))
     # 杠杆和反向 ETF 不要（类别是杠杆与反向，或跟踪说明里带“倍”）
     lev = lambda r: r[2].startswith('杠杆') or '倍' in r[3]
@@ -263,7 +265,7 @@ def main():
     today = datetime.date.today()
     earn = earnings()
     print(f'财报日历 {len(earn)} 只', flush=True)
-    res, fail = {}, []
+    res, fail, nodata = {}, [], set()
     with ThreadPoolExecutor(4) as ex:
         fut = {ex.submit(summarize, q, today, s, earn.get(s)): (s, k) for q, s, k in uni}
         for n, f in enumerate(as_completed(fut), 1):
@@ -272,13 +274,17 @@ def main():
                 r = f.result(); r['k'] = kind; r['name'] = ''; res[s] = r
             except Exception as e:
                 fail.append(s)
+                if getattr(e, 'code', 0) in (403, 404): nodata.add(s)
             if n % 200 == 0: print(f'  {n}/{len(uni)}  {time.time() - t0:.0f}s', flush=True)
 
     # 第一轮失败的（多半是 Cboe 临时限流），最后再一只一只慢慢重试一次
-    if fail:
-        print(f'重试 {len(fail)} 只：{" ".join(fail)}', flush=True)
+    if nodata:
+        print(f'Cboe 没有这些标的的数据，不再重试：{" ".join(sorted(nodata))}', flush=True)
+    retry = [s for s in fail if s not in nodata]
+    if retry:
+        print(f'重试 {len(retry)} 只：{" ".join(retry)}', flush=True)
         kinds = {s: k for q, s, k in uni}
-        for s in list(fail):
+        for s in retry:
             time.sleep(5)
             try:
                 r = summarize(('_' + s) if kinds[s] == 2 else s, today, s, earn.get(s)); r['k'] = kinds[s]; r['name'] = ''
