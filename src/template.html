@@ -159,7 +159,11 @@ h1 em{font-style:normal;color:var(--accent)}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:none}}
 .ic{animation:reveal .9s cubic-bezier(.3,.7,.2,1) backwards}
 .qp i{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) .15s backwards}
-.grid .card{animation:rise .42s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--n,0) * 28ms)}
+/* 卡片滚进屏幕时才播放出现动画（.rv 由脚本加上；没有脚本或系统要求减少动效时卡片直接显示） */
+.rv:not(.in){opacity:0}
+.rv.in{animation:rise .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d,0s)}
+.rv:not(.in) .ic{animation:none;clip-path:inset(0 100% 0 0)}.rv.in .ic{animation-delay:calc(var(--d,0s) + .12s)}
+.rv:not(.in) .qp i{animation:none;opacity:0}.rv.in .qp i{animation-delay:calc(var(--d,0s) + .25s)}
 .card,.fcard,.idx,.clock div{transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,border-color .2s}
 @media (hover:hover){
   .card:hover{transform:translateY(-3px);box-shadow:0 12px 28px -12px rgba(20,30,25,.28),0 2px 6px rgba(20,30,25,.06)}
@@ -277,7 +281,7 @@ main{padding-block:20px 64px;min-height:70vh}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .card{position:relative;display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0;cursor:pointer;transition:border-color .2s,box-shadow .2s;content-visibility:auto;contain-intrinsic-size:auto 170px}
 .card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
-.grid{animation:rise .25s backwards}
+.grid{}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}}
 .card-top{display:flex;align-items:center;gap:8px}
 .tk{font-family:var(--f-mono);font-weight:600;font-size:17px;letter-spacing:.02em}
@@ -1280,6 +1284,10 @@ $('#focus').addEventListener('click',e=>{const T=e.target;let b;
     if(g==='earn'){clearAll();st.oearn='w';st.sort='earn';setView('companies');setTimeout(()=>window.scrollTo({top:$('#bar').offsetTop,behavior:reduce?'auto':'smooth'}),60)}
     else if(g==='unu'){st.lunu='y';st.lk='';setView('trade');setTimeout(()=>{const x=$('#sec-rank');if(x)window.scrollTo({top:x.getBoundingClientRect().top+scrollY-84,behavior:reduce?'auto':'smooth'})},250)}
     else if(g==='cal'){setView('trade');setTimeout(()=>{const x=$('#sec-cal');if(x)window.scrollTo({top:x.getBoundingClientRect().top+scrollY-84,behavior:reduce?'auto':'smooth'})},250)}}});
+/* ---- 卡片滚进屏幕时再播放出现动画 ---- */
+const rvIO=('IntersectionObserver'in window)&&!reduce?new IntersectionObserver(en=>{let k=0;for(const e of en){if(!e.isIntersecting)continue;const t=e.target;t.style.setProperty('--d',(Math.min(k++,8)*0.045).toFixed(3)+'s');t.classList.add('in');rvIO.unobserve(t)}},{rootMargin:'0px 0px -30px 0px'}):null;
+const armRV=root=>{if(!rvIO)return;root.querySelectorAll('.card:not(.rv),.idx:not(.rv)').forEach(el=>{el.classList.add('rv');rvIO.observe(el)})};
+if(rvIO){new MutationObserver(()=>armRV($('#main'))).observe($('#main'),{childList:true,subtree:true});armRV($('#main'))}
 /* ---- 自动更新没成功时在首页提醒 ---- */
 function lastSessionBefore(ds){const d=new Date(ds+'T12:00:00Z');for(let k=0;k<12;k++){d.setUTCDate(d.getUTCDate()-1);const s=d.toISOString().slice(0,10),w=d.getUTCDay();if(w>0&&w<6&&!HOL[s])return s}return ds}
 function dataAlert(){const el=$('#dalert');if(!el||!OD.date)return;
