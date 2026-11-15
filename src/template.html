@@ -788,11 +788,13 @@ const q=$('#q');let qt;
 function setQ(v){q.value=v;st.q=v.trim().toLowerCase();$('#q-clear').hidden=!v;$('#kbd').hidden=!!v}
 q.addEventListener('input',()=>{clearTimeout(qt);qt=setTimeout(()=>{setQ(q.value);st.shown=36;if(st.q&&['guide','audit','trade','watch'].includes(st.view))setView('companies');else render()},90)});
 $('#q-clear').addEventListener('click',()=>{setQ('');render();q.focus()});
+/* 用鼠标选中文字后松开也会触发 click：有选中的文字时，不把它当成点击卡片 */
+const selecting=()=>{const s=window.getSelection&&getSelection();return !!s&&!s.isCollapsed&&s.toString().trim().length>0};
 document.addEventListener('keydown',e=>{
   const typing=/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName),dOn=$('#drawer').classList.contains('on');
   if(e.key==='/'&&!typing&&!e.metaKey&&!e.ctrlKey){e.preventDefault();q.focus();q.select()}
   else if(e.key==='Escape'){if(dOn)closeDrawer();else if($('#side')&&$('#side').classList.contains('on'))closeSheet();else if(document.activeElement===q)q.blur()}
-  else if(dOn&&!typing){if(e.key==='ArrowLeft')stepDrawer(-1);if(e.key==='ArrowRight')stepDrawer(1)}
+  else if(dOn&&!typing&&!e.shiftKey&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!selecting()){if(e.key==='ArrowLeft')stepDrawer(-1);if(e.key==='ArrowRight')stepDrawer(1)}
 });
 
 /* ---- 栏目 ---- */
@@ -969,7 +971,7 @@ $('#main').addEventListener('click',e=>{const T=e.target;let b;
   if(b=T.closest('[data-lb]')){st[b.dataset.lb]=st[b.dataset.lb]===b.dataset.v?'':b.dataset.v;st.lshown=30;$('#lb').innerHTML=lbHTML();return}
   if(T.closest('#lb-more')){st.lshown+=50;$('#lb').innerHTML=lbHTML();return}
   if(b=T.closest('[data-lt]')){const t=b.dataset.lt;if(IXN[t]){setQ('');setView('indices')}else if(CI.has(t))openDrawer(CI.get(t));else goETF(t);return}
-  if(b=T.closest('[data-i]'))openDrawer(+b.dataset.i)});
+  if(b=T.closest('[data-i]')){if(selecting()&&!T.closest('button'))return;openDrawer(+b.dataset.i)}});
 $('#main').addEventListener('change',e=>{const t=e.target;if(t.id==='sort'){st.sort=t.value;render()}else if(t.id==='esort'){st.esort=t.value;st.eshown=50;render()}else if(t.id==='wsort'){st.wsort=t.value;render()}else if(t.id==='lsort'){st.lsort=t.value;st.lshown=30;$('#lb').innerHTML=lbHTML()}});
 $('#main').addEventListener('input',e=>{const t=e.target;
   if(t.dataset.leg){LEGS[+t.dataset.leg][+t.dataset.f]=parseFloat(t.value)||0;drawPay()}
@@ -1230,6 +1232,7 @@ function renderFocus(){const el=$('#focus');if(!el)return;
   const newsCard=`<div class="fcard f-news"><h3><i></i>市场新闻<small>${mk.length&&/[\u4e00-\u9fff]/.test(mk[0][0])?'新浪财经':'雅虎财经'}</small></h3>${mk.length?`<ul class="fnews">${mk.map(newsLi).join('')}</ul>`:'<p class="fe">新闻下一次自动更新后显示。</p>'}</div>`;
   el.innerHTML=`<div class="focus-h"><b>今日看点</b><span>美东 ${ODATE} 收盘后的数据</span></div><div class="fgrid">${earnCard}${calCard}${unuCard}${newsCard}</div>`}
 $('#focus').addEventListener('click',e=>{const T=e.target;let b;
+  if(selecting()&&!T.closest('button,a'))return;
   if(b=T.closest('[data-fi]')){openDrawer(+b.dataset.fi);return}
   if(b=T.closest('[data-fetf]')){goETF(b.dataset.fetf);return}
   if(b=T.closest('[data-go]')){const g=b.dataset.go;
