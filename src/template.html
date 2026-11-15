@@ -154,11 +154,10 @@ h1 em{font-style:normal;color:var(--accent)}
 .qnote{margin:-2px 0 4px;font-size:11.5px;color:var(--muted)}
 .news .en,.fnews .en{display:block;font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:1px}
 /* ---- 动效和细节 ---- */
-@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes reveal{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes fadein{from{opacity:0}}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:none}}
-.ic .ln{stroke-dasharray:1;stroke-dashoffset:0;animation:draw .9s cubic-bezier(.3,.7,.2,1) backwards}
-.ic .ar{animation:fadein .9s .25s backwards}
+.ic{animation:reveal .9s cubic-bezier(.3,.7,.2,1) backwards}
 .qp i{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) .15s backwards}
 .grid .card{animation:rise .42s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--n,0) * 28ms)}
 .card,.fcard,.idx,.clock div{transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,border-color .2s}
@@ -1043,7 +1042,7 @@ fetch('intraday.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{i
 function ichart(t,w,h,up){const v=t&&INTRA&&INTRA.s[t];if(!v)return'';const a=v[1],N=78,lo=Math.min(0,...a),hi=Math.max(0,...a),r=hi-lo||1,p=2;
   const X=i=>(i/N*w).toFixed(1),Y=x=>(p+(hi-x)/r*(h-2*p)).toFixed(1),ln=a.map((x,i)=>(i?'L':'M')+X(i)+' '+Y(x)).join('');
   if(up==null){const o=O[t];up=o&&o[5]?o[6]>=0:a[a.length-1]>=0}
-  return `<svg class="ic ${up?'up':'dn'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path class="ar" d="${ln}L${X(a.length-1)} ${h}L0 ${h}Z"/><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}"/><path class="ln" pathLength="1" d="${ln}"/></svg>`}
+  return `<svg class="ic ${up?'up':'dn'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path class="ar" d="${ln}L${X(a.length-1)} ${h}L0 ${h}Z"/><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}"/><path class="ln" d="${ln}"/></svg>`}
 const f2=x=>x>=1000?x.toFixed(1):x.toFixed(2);
 /* 指数卡片：有指数期权的用期权数据里的价格；没有的用单独取的指数走势；再没有就用跟踪它的 ETF 代替 */
 const IXP={RUI:'IWB',RUA:'IWV',MID:'MDY',SML:'IJR',DJU:'XLU',HXC:'KWEB',DXY:'UUP'};
