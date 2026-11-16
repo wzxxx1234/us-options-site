@@ -3,7 +3,7 @@
 美股三大指数成分股、常用 ETF 和期权交易速查。期权数据来自 Cboe 公开的延时行情，
 每个美股交易日收盘后（北京时间早上 6 点左右，GitHub 常会晚一些）由 GitHub Actions 自动更新。
 
-线上网址：https://wzxxx1234.github.io/us-options-site/
+线上网址：https://stock.wzxxx123456.top/ （旧地址 https://wzxxx1234.github.io/us-options-site/ 会自动跳过来）
 
 - `src/fetch_cboe.py`：抓网站上个股、ETF、指数的期权链，算成交量、P/C、IV30、平值买卖价差、近期到期日
 - `src/build.py`：把数据嵌进 `src/template.html`，生成 `index.html`
