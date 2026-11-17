@@ -1,6 +1,8 @@
 # 每个美股交易日收盘后，从 Cboe 抓期权数据、重新生成网页并发布到 GitHub Pages。
-# 21:45 UTC 周一到周五 = 北京时间周二到周六早上 5:45（美股收盘后约 45 分钟；GitHub 的定时任务常会晚几十分钟到几小时才开始）。
-# 仓库里的文件有改动时（比如推送了新模板），只用最近一次的数据重新生成网页，约 30 秒。
+# GitHub 的定时任务常常晚几个小时才开始，甚至漏掉，所以一天安排 4 个时间（北京时间早上 5:45、7:15、8:45、10:15，
+# 即美股收盘后 45 分钟起），先到的那次完整更新；后面的发现网站数据是 10 小时内抓的就直接跳过，不会重复抓。
+# 仓库里的文件有改动时（比如推送了新模板），只用最近一次的数据重新生成网页，约 30 秒；
+# 推送时提交说明里带“[完整更新]”，就改为完整更新（不用打开 GitHub 网页也能手动触发）。
 # 手动运行可选：full 全量抓取（约 30 分钟，含分时走势和新闻翻译）/ rebuild 只重新生成网页 / quick 只抓 60 只测试。
 # 完整更新后，最新数据（期权、分时走势、走势记录）会存回仓库的 src/data/，在电脑上 git pull 就能拿到。
 name: 每日更新期权数据
@@ -8,6 +10,9 @@ name: 每日更新期权数据
 on:
   schedule:
     - cron: '45 21 * * 1-5'
+    - cron: '15 23 * * 1-5'
+    - cron: '45 0 * * 2-6'
+    - cron: '15 2 * * 2-6'
   push:
     branches: [main]
   workflow_dispatch:
@@ -27,13 +32,30 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+
 jobs:
+  # 定时触发时先看网站上的数据是不是刚更新过，是就跳过这次
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.c.outputs.go }}
+    steps:
+      - id: c
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          h=$(curl -fsSL "$PAGES_URL/options_latest.json" | python3 -c 'import json,sys,datetime as D;d=json.load(sys.stdin);t=D.datetime.fromisoformat(d["fetched"][:19]);print(int((D.datetime.utcnow()-t).total_seconds()//3600))' || echo 99)
+          echo "网站上的数据是 $h 小时前抓的"
+          if [ "$h" -lt 10 ]; then echo "已经更新过，这次跳过"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
+
   build:
+    needs: check
+    if: needs.check.outputs.go == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      MODE: ${{ github.event_name == 'push' && 'rebuild' || github.event_name == 'schedule' && 'full' || inputs.mode }}
-      PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      MODE: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[完整更新]') && 'full' || 'rebuild') || github.event_name == 'schedule' && 'full' || inputs.mode }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
