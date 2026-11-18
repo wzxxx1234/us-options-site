@@ -153,6 +153,8 @@ h1 em{font-style:normal;color:var(--accent)}
 .icb-x{position:absolute;top:0;bottom:0;width:1px;background:var(--ink);opacity:.35;pointer-events:none}
 .icb-ax{position:relative;height:18px;font-size:11px;color:var(--muted);font-family:var(--f-mono)}.icb-ax span{position:absolute;top:3px;transform:translateX(-50%)}.icb-ax span:first-child{transform:none}
 .qnote{margin:-2px 0 4px;font-size:11.5px;color:var(--muted)}
+.trbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:4px 0 2px;font-size:12px;color:var(--muted)}
+.trbtn{font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:99px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer;transition:background .15s,color .15s}.trbtn:hover{background:var(--accent);color:var(--bg)}
 .news .en,.fnews .en{display:block;font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:1px}
 /* ---- 动效和细节 ---- */
 @keyframes reveal{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
@@ -1099,7 +1101,7 @@ function openDrawer(i){const c=C[i],d=$('#drawer');if(!d.classList.contains('on'
   <div class="d-h">看行情</div><div class="d-links"><a href="https://finance.yahoo.com/quote/${encodeURIComponent(y)}" target="_blank" rel="noopener">Yahoo Finance ↗</a><a href="https://www.tradingview.com/symbols/${encodeURIComponent(c[0])}/" target="_blank" rel="noopener">TradingView ↗</a><a href="https://www.google.com/finance?q=${encodeURIComponent(y)}" target="_blank" rel="noopener">Google Finance ↗</a></div>
   ${etfs.length?`<div class="d-h">持有它的常见 ETF</div><div class="d-rel">${etfs.map(([t,l])=>`<button class="pill" data-etf="${t}"><b>${t}</b>${l}</button>`).join('')}</div><p class="d-sm">按指数和板块归属推断，具体权重请到发行方网站查看。</p>`:''}
   <div class="d-h">同行业的公司</div><div class="d-rel">${rel.map(j=>`<button class="pill" data-i="${j}"><b>${esc(C[j][0])}</b>${esc(C[j][1])}</button>`).join('')}</div></div>`;
-  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');
+  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');trNews(d);
   if(hot)hot.classList.remove('hot');hot=tiles[i]||null;if(hot)hot.classList.add('hot');
   $('#d-x').focus({preventScroll:true})}
 function stepDrawer(n){const p=RES.indexOf(cur);if(p<0)return;const t=RES[p+n];if(t!=null)openDrawer(t)}
@@ -1262,7 +1264,30 @@ const NEWS=DATA.N||{};
 const ago=d=>{if(!d)return'';const m=Math.round((Date.now()-Date.parse(d))/6e4);return m<60?Math.max(1,m)+' 分钟前':m<1440?Math.round(m/60)+' 小时前':Math.round(m/1440)+' 天前'};
 function estrip(t,big){const e=earnOf(t);if(!e)return'';const n=dayDiff(etToday,e[0]);if(n<0||n>14)return'';const o=O[t];
   return `<div class="estrip${n<=3?' hot':''}${big?' big':''}"><b>财报 ${md(e[0])} ${wkd(e[0])}${e[1]==='pre'?' 盘前':e[1]==='post'?' 盘后':''}</b><span>${n===0?'今天':n===1?'明天':n+' 天后'}</span>${o&&o[18]?`<span>财报后预期 ±${o[18][2]}%</span>`:''}</div>`}
-const newsLi=([ti,l,d,zh])=>`<li><a href="${esc(l)}" target="_blank" rel="noopener">${esc(zh||ti)}</a>${zh?`<span class="en">${esc(ti)}</span>`:''}<small>${ago(d)}</small></li>`;
+/* 英文标题：用浏览器自带的翻译（Chrome / Edge 的 Translator），在本机翻成中文；翻过的存在浏览器里，下次直接显示 */
+const BT={api:'Translator'in self,inst:null,cache:{}};
+try{BT.cache=JSON.parse(localStorage.getItem('ntr')||'{}')}catch(e){}
+const trSave=()=>{try{const k=Object.keys(BT.cache);if(k.length>600)k.slice(0,k.length-500).forEach(x=>delete BT.cache[x]);localStorage.setItem('ntr',JSON.stringify(BT.cache))}catch(e){}};
+const trPair={sourceLanguage:'en',targetLanguage:'zh'};
+/* 'ready' 已经可以翻 / 'need' 要先下载语言包（要用户点一下） / 'none' 这个浏览器不支持 */
+async function trState(){if(!BT.api)return'none';if(BT.inst)return'ready';let a;try{a=await Translator.availability(trPair)}catch(e){return'none'}
+  return a==='available'?'ready':a==='unavailable'?'none':'need'}
+async function trCreate(){if(!BT.inst)BT.inst=await Translator.create(trPair);return BT.inst}
+const needTr=(ti,zh)=>!zh&&/[A-Za-z]/.test(ti)&&!/[\u4e00-\u9fff]/.test(ti);
+const newsLi=([ti,l,d,zh,src])=>{zh=zh||(needTr(ti)&&BT.cache[ti])||'';const nt=!zh&&needTr(ti);
+  return `<li${nt?' data-tr':''}><a href="${esc(l)}" target="_blank" rel="noopener">${esc(zh||ti)}</a>${zh?`<span class="en" lang="en">${esc(ti)}</span>`:''}<small>${ago(d)}</small></li>`};
+async function trNews(root){const lis=[...root.querySelectorAll('.news li[data-tr]')];if(!lis.length)return;
+  const ul=root.querySelector('.news');let bar=root.querySelector('.trbar');
+  const mk=h=>{if(!bar){bar=document.createElement('div');bar.className='trbar';ul.before(bar)}bar.innerHTML=h};
+  const run=async()=>{let tr;try{tr=await trCreate()}catch(e){mk('<span>翻译没有准备好，换成最新版 Chrome 或 Edge 试试</span>');return}
+    for(const li of lis){const a=li.querySelector('a');if(!a||!li.isConnected)continue;const ti=a.textContent;
+      try{const z=await tr.translate(ti);if(z&&z!==ti){BT.cache[ti]=z;a.textContent=z;a.insertAdjacentHTML('afterend',`<span class="en" lang="en">${esc(ti)}</span>`);li.removeAttribute('data-tr')}}catch(e){}}
+    trSave();if(bar)bar.remove()};
+  const st=await trState();
+  if(st==='ready'){await run();return}
+  if(st==='need'){mk('<button class="trbtn" type="button">翻译成中文</button><span>浏览器第一次翻译要下载语言包（只下载一次），之后自动翻译</span>');
+    bar.querySelector('button').onclick=async()=>{mk('<span>正在准备翻译，第一次要等一会儿…</span>');await run()};return}
+  mk('<span>这几条是英文标题。用最新版 Chrome 或 Edge 打开，可以自动翻成中文</span>')}
 function newsHTML(t){const L=NEWS[t];if(!L||!L.length)return'';
   return `<div class="d-h">相关新闻<small>雅虎财经${L.some(x=>x[3])?'，中文是机器翻译，点开是英文原文':'，英文标题'}</small></div><ul class="news">${L.map(newsLi).join('')}</ul>`}
 function renderFocus(){const el=$('#focus');if(!el)return;
