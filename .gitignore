@@ -9,3 +9,4 @@ src/data/fetch.log
 src/data/prev_news.json
 上传/
 *.webloc
+/small.json

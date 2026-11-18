@@ -73,7 +73,8 @@ jobs:
             mkdir -p /tmp/site
             curl -fsSL "$PAGES_URL/options_latest.json" -o /tmp/site/options_latest.json || true
             curl -fsSL "$PAGES_URL/intraday.json" -o /tmp/site/intraday.json || true
-            python3 -c 'import json,os,shutil;[(shutil.copy("/tmp/site/"+f,"src/data/"+f),print("用网站上较新的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d")) if os.path.exists("/tmp/site/"+f) and json.load(open("/tmp/site/"+f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
+            curl -fsSL "$PAGES_URL/small.json" -o /tmp/site/small.json || true
+            python3 -c 'import json,os,shutil;[(shutil.copy("/tmp/site/"+f,"src/data/"+f),print("用网站上较新的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d"),("small.json","d")) if os.path.exists("/tmp/site/"+f) and json.load(open("/tmp/site/"+f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
             [ -f src/data/options_latest.json ] || python3 src/fetch_cboe.py --min 700
           elif [ "$MODE" = "quick" ]; then
             python3 src/fetch_cboe.py --limit 60 --min 50 --intraday
@@ -88,6 +89,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/hist.json src/data/options_latest.json src/data/intraday.json
+          [ -f src/data/small.json ] && git add src/data/small.json || true
           git commit -m "数据 $(python3 -c 'import json;print(json.load(open("src/data/options_latest.json"))["date"])')" || echo "没有变化"
           # 运行期间仓库可能有新提交，先合并再推送，最多试 3 次
           for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done || echo "推送失败，下次再存"
@@ -100,6 +102,7 @@ jobs:
           cp src/data/options_latest.json _site/options_latest.json
           [ -f src/data/hist.json ] && cp src/data/hist.json _site/hist.json || true
           [ -f src/data/intraday.json ] && cp src/data/intraday.json _site/intraday.json || true
+          [ -f src/data/small.json ] && cp src/data/small.json _site/small.json || true
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

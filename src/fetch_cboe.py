@@ -296,6 +296,183 @@ def intraday(res, day):
     json.dump({'d': day, 's': out}, open(os.path.join(DATA, 'intraday.json'), 'w'), separators=(',', ':'))
     print(f'分时走势 {len(out)} 只，用时 {time.time() - t0:.0f}s', flush=True)
 
+# ---------- 小盘正股池：每天从全市场里筛出“小盘 + 有流动性”的股票，算好指标，存成 data/small.json ----------
+# 门槛：市值 3000 万 ~ 20 亿美元，股价 ≥ 2 美元，当天成交额 ≥ 500 万美元（太冷清的进出都吃亏，不收）
+SMALL_RULE = {'mcap_min': 3e7, 'mcap_max': 20e8, 'price_min': 2.0, 'dv_min': 5e6}
+SEC_CN = {'Health Care': '医疗保健', 'Finance': '金融', 'Technology': '科技', 'Consumer Discretionary': '可选消费',
+          'Industrials': '工业', 'Energy': '能源', 'Real Estate': '房地产', 'Basic Materials': '材料',
+          'Consumer Staples': '必需消费', 'Utilities': '公用事业', 'Telecommunications': '通信', 'Miscellaneous': '其他'}
+JUNK = re.compile(r'Acquisition (Corp|Corporation|Co)\b|\bWarrants?\b|\bRights?\b|\bUnits?\b|Depositary Shares|Preferred', re.I)
+NAME_TAIL = re.compile(r'\s+(Class [A-Z]\s+)?(Common Stock|Ordinary Shares?|Common Shares?|Shares of Beneficial Interest|American Depositary Shares?).*$', re.I)
+
+def _num(x):
+    try:
+        return float(str(x).replace('$', '').replace(',', '').replace('%', '').strip())
+    except Exception:
+        return 0.0
+
+def nq_json(url, tries=3):
+    for k in range(tries):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=NQ), timeout=30) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            if k == tries - 1 or getattr(e, 'code', 0) in (400, 404):
+                return None
+            time.sleep((10 if getattr(e, 'code', 0) == 429 else 2) * (k + 1))
+
+def small_pool():
+    j = nq_json('https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=10000&download=true')
+    rows = j['data']['rows']
+    pool = []
+    for r in rows:
+        s = r['symbol']
+        if not re.fullmatch(r'[A-Z]{1,5}', s): continue      # 只要普通代码（不含 BRK/B 这类、权证后缀）
+        p, mc, v = _num(r['lastsale']), _num(r['marketCap']), _num(r['volume'])
+        if not (SMALL_RULE['mcap_min'] <= mc < SMALL_RULE['mcap_max'] and p >= SMALL_RULE['price_min'] and p * v >= SMALL_RULE['dv_min']): continue
+        if JUNK.search(r['name']): continue
+        pool.append(r)
+    return pool, len(rows)
+
+def _hist(sym, day):
+    d1 = datetime.date.fromisoformat(day)
+    j = nq_json(f'https://api.nasdaq.com/api/quote/{sym}/historical?assetclass=stocks&fromdate={(d1 - datetime.timedelta(days=380)).isoformat()}&limit=300&todate={day}')
+    rows = ((j or {}).get('data') or {}).get('tradesTable', {}) or {}
+    out = []
+    for r in rows.get('rows') or []:
+        try:
+            m, d, y = r['date'].split('/')
+            out.append((f'{y}-{m}-{d}', _num(r['open']), _num(r['high']), _num(r['low']), _num(r['close']), _num(r['volume'])))
+        except Exception:
+            pass
+    out.sort(reverse=True)    # 新的在前
+    return out
+
+def _metrics(h):
+    """日线 -> 成交量比、52 周高低、近期涨幅、连涨连跌、日波动幅度、跳空、60 日走势。h 是新的在前的 (日期, 开, 高, 低, 收, 量)。"""
+    if len(h) < 25 or not h[0][4] or not h[1][4]: return None
+    c = [x[4] for x in h]; hi = [x[2] for x in h]; lo = [x[3] for x in h]; vo = [x[5] for x in h]
+    av = sum(vo[1:31]) / len(vo[1:31])
+    m = {'av': int(av), 'rv': round(vo[0] / av, 2) if av else 0}
+    # 价格、涨跌、成交量都用日线里最新一天的（纳斯达克的筛选器列表有时还停在前一天，和日线对不上）
+    m['p'], m['c'], m['v'], m['dv'] = c[0], round((c[0] / c[1] - 1) * 100, 2), int(vo[0]), round(c[0] * vo[0] / 1e4)
+    m['dt'] = h[0][0]
+    n = min(len(h), 252)
+    m['h'], m['l'] = round(max(hi[:n]), 3), round(min(lo[:n]), 3)
+    if hi[0] >= max(hi[1:n]): m['nh'] = 1      # 今天创 52 周新高
+    if lo[0] <= min(lo[1:n]): m['nl'] = 1      # 今天创 52 周新低
+    m['r5'] = round((c[0] / c[5] - 1) * 100, 1)
+    m['r20'] = round((c[0] / c[20] - 1) * 100, 1)
+    up = c[0] > c[1]; s = 0
+    for i in range(len(c) - 1):
+        if (c[i] > c[i + 1]) if up else (c[i] < c[i + 1]): s += 1
+        else: break
+    m['st'] = s if up else -s
+    tr = [max(hi[i] - lo[i], abs(hi[i] - c[i + 1]), abs(lo[i] - c[i + 1])) for i in range(14)]
+    m['atr'] = round(sum(tr) / 14 / c[0] * 100, 1)
+    m['gap'] = round((h[0][1] / c[1] - 1) * 100, 1)
+    m['sp'] = [round(x * 100) for x in c[:60][::-1]]
+    return m
+
+def _short(sym):
+    j = nq_json(f'https://api.nasdaq.com/api/quote/{sym}/short-interest?assetClass=stocks')
+    t = ((j or {}).get('data') or {}).get('shortInterestTable', {}) or {}
+    rows = t.get('rows') or []
+    if not rows: return None
+    r = rows[0]
+    try:
+        m, d, y = r['settlementDate'].split('/'); sd = f'{y}-{m}-{d}'
+    except Exception:
+        sd = ''
+    return {'si': int(_num(r.get('interest'))), 'sd': sd, 'dtc': round(_num(r.get('daysToCover')), 1)}
+
+def finra_short(day):
+    """FINRA 每天公布的卖空成交量（占当天总成交量的百分比），取不到当天的就往前找几天。"""
+    d = datetime.date.fromisoformat(day)
+    for k in range(5):
+        dd = d - datetime.timedelta(days=k)
+        if dd.weekday() >= 5: continue
+        try:
+            req = urllib.request.Request(f'https://cdn.finra.org/equity/regsho/daily/CNMSshvol{dd:%Y%m%d}.txt', headers={'User-Agent': 'Mozilla/5.0'})
+            t = urllib.request.urlopen(req, timeout=60).read().decode('utf-8', 'replace')
+        except Exception:
+            continue
+        out = {}
+        for line in t.splitlines()[1:]:
+            p = line.split('|')
+            if len(p) >= 5:
+                try:
+                    tv = float(p[4])
+                    if tv > 0: out[p[1]] = round(float(p[2]) / tv * 100)
+                except ValueError:
+                    pass
+        return dd.isoformat(), out
+    return None, {}
+
+def small_scan(day, earn=None):
+    t0 = time.time()
+    pool, total = small_pool()
+    print(f'小盘池：全市场 {total} 只，符合条件 {len(pool)} 只', flush=True)
+
+    def one(r):
+        s = r['symbol']
+        m = _metrics(_hist(s, day))
+        if not m: return s, None
+        p, mc = _num(r['lastsale']), _num(r['marketCap'])
+        rec = {'n': NAME_TAIL.sub('', r['name']).strip()[:40], 'mc': round(mc / 1e8 * (m['p'] / p if p else 1), 2),
+               'sec': SEC_CN.get(r.get('sector') or '', '未分类'), 'ind': (r.get('industry') or '')[:40],
+               'cty': r.get('country') or '', 'ipo': int(_num(r.get('ipoyear')))}
+        rec.update(m)
+        sh = _short(s)
+        if sh:
+            rec.update(sh)
+            if mc and p: rec['sip'] = round(sh['si'] / (mc / p) * 100, 1)    # 占总股本的百分比（用市值÷股价估算总股本）
+        if earn and s in earn: rec['er'] = earn[s]
+        return s, rec
+
+    out, fail = {}, 0
+    with ThreadPoolExecutor(6) as ex:
+        fut = [ex.submit(one, r) for r in pool]
+        for n, f in enumerate(as_completed(fut), 1):
+            try:
+                s, rec = f.result()
+            except Exception:
+                fail += 1; continue
+            if rec: out[s] = rec
+            else: fail += 1
+            if n % 200 == 0: print(f'  小盘 {n}/{len(pool)}  {time.time() - t0:.0f}s', flush=True)
+    # 数据日 = 大多数股票日线最新一天的日期；停牌等日期对不上的先去掉
+    from collections import Counter
+    dd = Counter(v['dt'] for v in out.values()).most_common(1)[0][0] if out else day
+    stale = [s for s, v in out.items() if v['dt'] != dd]
+    for s in stale: del out[s]
+    low = [s for s, v in out.items() if v['dv'] < SMALL_RULE['dv_min'] / 1e4 or v['p'] < SMALL_RULE['price_min']]
+    for s in low: del out[s]      # 名单是按前一天的数据圈的，这里再按最新一天的成交额和股价筛一遍
+    print(f'按最新一天的成交额和股价再筛一遍，去掉 {len(low)} 只', flush=True)
+    for v in out.values(): v.pop('dt', None)
+    day = dd
+    d0 = datetime.date.fromisoformat(day)
+    fd, fin = finra_short(day)
+    print(f'数据日 {day}，{len(stale)} 只日期对不上被去掉；FINRA 卖空成交量：{fd}，{len(fin)} 只', flush=True)
+    for s, v in out.items():
+        if fin.get(s) is not None: v['sv'] = fin[s]
+    # 今天异动的（涨跌最多、成交量比最高、财报临近）顺便抓几条雅虎新闻
+    L = list(out.items())
+    pick = [k for k, v in sorted(L, key=lambda kv: -kv[1]['c'])[:12]] + [k for k, v in sorted(L, key=lambda kv: kv[1]['c'])[:12]] \
+        + [k for k, v in sorted(L, key=lambda kv: -kv[1]['rv'])[:12]] \
+        + [k for k, v in sorted(L, key=lambda kv: -kv[1]['dv']) if v.get('er') and 0 <= (datetime.date.fromisoformat(v['er'][0]) - d0).days <= 7][:15]
+    nn = 0
+    for s in dict.fromkeys(pick):
+        try:
+            h = headlines(s, 4)
+            if h: out[s]['nw'] = h; nn += 1
+        except Exception:
+            pass
+        time.sleep(0.4)
+    json.dump({'d': day, 'n': len(out), 'rule': SMALL_RULE, 'finra': fd, 's': out},
+              open(os.path.join(DATA, 'small.json'), 'w'), separators=(',', ':'), ensure_ascii=False)
+    print(f'小盘池完成：{len(out)} 只（{fail} 只没取到日线），其中 {nn} 只带新闻，用时 {time.time() - t0:.0f}s', flush=True)
+
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
 
@@ -396,6 +573,10 @@ def summarize(sym, today, name, earn=None):
 def main():
     limit = int(sys.argv[sys.argv.index('--limit') + 1]) if '--limit' in sys.argv else 0
     t0 = time.time()
+    if '--small-only' in sys.argv:   # 只更新小盘池（用现有的数据日期），本地测试用
+        day0 = json.load(open(os.path.join(DATA, 'options_latest.json')))['date']
+        small_scan(day0, earnings())
+        return
     site = json.load(open(os.path.join(DATA, 'data.json')))
     # 已退市、网站上已经去掉的公司不抓（和 build.py 保持一致）
     stocks = sorted(({r[0] for r in site['全部公司'][1:]} | {'SPCX'}) - {'EA', 'WBD', 'KVUE'})
@@ -483,6 +664,11 @@ def main():
         update_history(day, res)
     if not limit or '--intraday' in sys.argv:
         intraday(res, day)
+    if not limit or '--small' in sys.argv:
+        try:
+            small_scan(day, earn)
+        except Exception as e:      # 小盘池出问题不影响期权、新闻这些主要数据
+            print('小盘池更新失败（不影响其他数据）：', e, flush=True)
     # --min N：成功少于 N 只就报错退出，不生成、不发布残缺的网页
     need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
     if len(res) < need:
