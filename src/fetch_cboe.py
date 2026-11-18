@@ -420,7 +420,7 @@ def small_scan(day, earn=None):
         if not m: return s, None
         p, mc = _num(r['lastsale']), _num(r['marketCap'])
         rec = {'n': NAME_TAIL.sub('', r['name']).strip()[:40], 'mc': round(mc / 1e8 * (m['p'] / p if p else 1), 2),
-               'sec': SEC_CN.get(r.get('sector') or '', '未分类'), 'ind': (r.get('industry') or '')[:40],
+               'sec': SEC_CN.get(r.get('sector') or '', '未分类'), 'ind': (r.get('industry') or '')[:60],
                'cty': r.get('country') or '', 'ipo': int(_num(r.get('ipoyear')))}
         rec.update(m)
         sh = _short(s)
@@ -472,6 +472,10 @@ def small_scan(day, earn=None):
     json.dump({'d': day, 'n': len(out), 'rule': SMALL_RULE, 'finra': fd, 's': out},
               open(os.path.join(DATA, 'small.json'), 'w'), separators=(',', ':'), ensure_ascii=False)
     print(f'小盘池完成：{len(out)} 只（{fail} 只没取到日线），其中 {nn} 只带新闻，用时 {time.time() - t0:.0f}s', flush=True)
+    try:
+        small_profiles(list(out))
+    except Exception as e:
+        print('公司简介更新失败（不影响其他数据）：', e, flush=True)
 
 # ---------- 盘前行情：每个交易日开盘前抓一次小盘池的盘前价和盘前成交量，存成 data/premarket.json ----------
 def premarket_scan(force=False):
@@ -510,6 +514,42 @@ def premarket_scan(force=False):
     json.dump({'t': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'd': now.date().isoformat(), 's': out},
               open(os.path.join(DATA, 'premarket.json'), 'w'), separators=(',', ':'))
     print(f'盘前行情：{len(out)}/{len(syms)} 只有盘前成交，用时 {time.time() - t0:.0f}s', flush=True)
+
+# ---------- 小盘股公司简介：纳斯达克的公司简介（英文），只抓新进名单的，存成 data/small_profiles.json ----------
+def _prof_one(sym):
+    j = nq_json(f'https://api.nasdaq.com/api/company/{sym}/company-profile')
+    d = (j or {}).get('data') or {}
+    v = lambda k: ((d.get(k) or {}).get('value') or '')
+    desc = re.sub(r'\s+', ' ', v('CompanyDescription')).strip()
+    if not desc: return None
+    if len(desc) > 900:      # 太长的在句子结尾处截断
+        cut = desc[:900]
+        desc = cut[:cut.rfind('. ') + 1] if '. ' in cut[300:] else cut
+    return {'de': desc, 'url': v('CompanyUrl')}
+
+def small_profiles(syms):
+    p = os.path.join(DATA, 'small_profiles.json')
+    try:
+        old = json.load(open(p)).get('p', {})
+    except Exception:
+        old = {}
+    todo = [s for s in syms if s not in old]
+    t0 = time.time()
+    new, miss = {}, 0
+    with ThreadPoolExecutor(6) as ex:
+        fut = {ex.submit(_prof_one, s): s for s in todo}
+        for n, f in enumerate(as_completed(fut), 1):
+            try:
+                r = f.result()
+            except Exception:
+                r = None
+            if r: new[fut[f]] = r
+            else: miss += 1
+            if n % 200 == 0: print(f'  简介 {n}/{len(todo)}  {time.time() - t0:.0f}s', flush=True)
+    keep = {s: v for s, v in old.items() if s in set(syms)}      # 掉出名单的不留，文件不会越来越大
+    keep.update(new)
+    json.dump({'d': datetime.date.today().isoformat(), 'p': keep}, open(p, 'w'), separators=(',', ':'), ensure_ascii=False)
+    print(f'公司简介：新抓 {len(new)} 只（{miss} 只没有简介），共 {len(keep)} 只，用时 {time.time() - t0:.0f}s', flush=True)
 
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
@@ -613,6 +653,9 @@ def main():
     t0 = time.time()
     if '--premarket' in sys.argv:    # 只抓盘前行情（--force 不看时间，测试用）
         premarket_scan('--force' in sys.argv)
+        return
+    if '--profiles-only' in sys.argv:    # 只更新小盘股公司简介（用现有的 small.json 名单）
+        small_profiles(list(json.load(open(os.path.join(DATA, 'small.json')))['s']))
         return
     if '--small-only' in sys.argv:   # 只更新小盘池（用现有的数据日期），本地测试用
         day0 = json.load(open(os.path.join(DATA, 'options_latest.json')))['date']

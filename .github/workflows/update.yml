@@ -75,8 +75,9 @@ jobs:
             curl -fsSL "$PAGES_URL/options_latest.json" -o /tmp/site/options_latest.json || true
             curl -fsSL "$PAGES_URL/intraday.json" -o /tmp/site/intraday.json || true
             curl -fsSL "$PAGES_URL/small.json" -o /tmp/site/small.json || true
+            curl -fsSL "$PAGES_URL/small_profiles.json" -o /tmp/site/small_profiles.json || true
             curl -fsSL "$PAGES_URL/premarket.json" -o /tmp/site/premarket.json || true
-            python3 -c 'import json,os,shutil;[(shutil.copy("/tmp/site/"+f,"src/data/"+f),print("用网站上较新的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d"),("small.json","d"),("premarket.json","t")) if os.path.exists("/tmp/site/"+f) and json.load(open("/tmp/site/"+f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
+            python3 -c 'import json,os,shutil;[(shutil.copy("/tmp/site/"+f,"src/data/"+f),print("用网站上较新的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d"),("small.json","d"),("small_profiles.json","d"),("premarket.json","t")) if os.path.exists("/tmp/site/"+f) and json.load(open("/tmp/site/"+f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
             [ -f src/data/options_latest.json ] || python3 src/fetch_cboe.py --min 700
             # 盘前更新：抓小盘股的盘前行情（取不到也不影响其他数据）
             if [ "$MODE" = "pre" ]; then python3 src/fetch_cboe.py --premarket || echo "盘前数据没取到"; fi
@@ -94,6 +95,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/hist.json src/data/options_latest.json src/data/intraday.json
           [ -f src/data/small.json ] && git add src/data/small.json || true
+          [ -f src/data/small_profiles.json ] && git add src/data/small_profiles.json || true
           git commit -m "数据 $(python3 -c 'import json;print(json.load(open("src/data/options_latest.json"))["date"])')" || echo "没有变化"
           # 运行期间仓库可能有新提交，先合并再推送，最多试 3 次
           for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done || echo "推送失败，下次再存"
@@ -107,6 +109,7 @@ jobs:
           [ -f src/data/hist.json ] && cp src/data/hist.json _site/hist.json || true
           [ -f src/data/intraday.json ] && cp src/data/intraday.json _site/intraday.json || true
           [ -f src/data/small.json ] && cp src/data/small.json _site/small.json || true
+          [ -f src/data/small_profiles.json ] && cp src/data/small_profiles.json _site/small_profiles.json || true
           [ -f src/data/premarket.json ] && cp src/data/premarket.json _site/premarket.json || true
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3

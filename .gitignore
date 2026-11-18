@@ -11,3 +11,4 @@ src/data/prev_news.json
 *.webloc
 /small.json
 /premarket.json
+/small_profiles.json
