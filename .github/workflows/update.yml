@@ -3,6 +3,7 @@
 # 即美股收盘后 45 分钟起），先到的那次完整更新；后面的发现网站数据是 10 小时内抓的就直接跳过，不会重复抓。
 # 仓库里的文件有改动时（比如推送了新模板），只用最近一次的数据重新生成网页，约 30 秒；
 # 推送时提交说明里带“[完整更新]”，就改为完整更新（不用打开 GitHub 网页也能手动触发）。
+# 盘前更新（pre）由 Cloudflare 在每个交易日 UTC 13:00 触发（美东 8:00 或 9:00，北京时间 21:00），不依赖 GitHub 的定时，因为盘前数据晚了就没用。
 # 手动运行可选：full 全量抓取（约 30 分钟，含分时走势和新闻翻译）/ rebuild 只重新生成网页 / quick 只抓 60 只测试。
 # 完整更新后，最新数据（期权、分时走势、走势记录）会存回仓库的 src/data/，在电脑上 git pull 就能拿到。
 name: 每日更新期权数据
@@ -18,9 +19,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'full 全量抓取 / rebuild 只重新生成网页 / quick 只抓 60 只测试 / auto 完整更新，但网站数据 10 小时内更新过就跳过（Cloudflare 定时触发用这个）'
+        description: 'full 全量抓取 / rebuild 只重新生成网页 / quick 只抓 60 只测试 / pre 盘前更新（小盘股盘前行情） / auto 完整更新，但网站数据 10 小时内更新过就跳过（Cloudflare 定时触发用这个）'
         type: choice
-        options: [full, rebuild, quick, auto]
+        options: [full, rebuild, quick, auto, pre]
         default: full
 
 permissions:
@@ -68,14 +69,17 @@ jobs:
           [ -f src/data/hist.json ] || curl -fsSL "$PAGES_URL/hist.json" -o src/data/hist.json || true
       - name: 准备期权数据（模式：${{ env.MODE }}）
         run: |
-          if [ "$MODE" = "rebuild" ]; then
+          if [ "$MODE" = "rebuild" ] || [ "$MODE" = "pre" ]; then
             # 仓库里的数据和网站上的，哪份新用哪份
             mkdir -p /tmp/site
             curl -fsSL "$PAGES_URL/options_latest.json" -o /tmp/site/options_latest.json || true
             curl -fsSL "$PAGES_URL/intraday.json" -o /tmp/site/intraday.json || true
             curl -fsSL "$PAGES_URL/small.json" -o /tmp/site/small.json || true
-            python3 -c 'import json,os,shutil;[(shutil.copy("/tmp/site/"+f,"src/data/"+f),print("用网站上较新的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d"),("small.json","d")) if os.path.exists("/tmp/site/"+f) and json.load(open("/tmp/site/"+f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
+            curl -fsSL "$PAGES_URL/premarket.json" -o /tmp/site/premarket.json || true
+            python3 -c 'import json,os,shutil;[(shutil.copy("/tmp/site/"+f,"src/data/"+f),print("用网站上较新的",f)) for f,k in (("options_latest.json","fetched"),("intraday.json","d"),("small.json","d"),("premarket.json","t")) if os.path.exists("/tmp/site/"+f) and json.load(open("/tmp/site/"+f)).get(k,"")>(json.load(open("src/data/"+f)).get(k,"") if os.path.exists("src/data/"+f) else "")]'
             [ -f src/data/options_latest.json ] || python3 src/fetch_cboe.py --min 700
+            # 盘前更新：抓小盘股的盘前行情（取不到也不影响其他数据）
+            if [ "$MODE" = "pre" ]; then python3 src/fetch_cboe.py --premarket || echo "盘前数据没取到"; fi
           elif [ "$MODE" = "quick" ]; then
             python3 src/fetch_cboe.py --limit 60 --min 50 --intraday
           else
@@ -103,6 +107,7 @@ jobs:
           [ -f src/data/hist.json ] && cp src/data/hist.json _site/hist.json || true
           [ -f src/data/intraday.json ] && cp src/data/intraday.json _site/intraday.json || true
           [ -f src/data/small.json ] && cp src/data/small.json _site/small.json || true
+          [ -f src/data/premarket.json ] && cp src/data/premarket.json _site/premarket.json || true
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

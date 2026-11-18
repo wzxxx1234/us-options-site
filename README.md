@@ -7,7 +7,7 @@
 
 - `src/fetch_cboe.py`：抓网站上个股、ETF、指数的期权链，算成交量、P/C、IV30、平值买卖价差、近期到期日
 - `src/build.py`：把数据嵌进 `src/template.html`，生成 `index.html`
-- 小盘正股：`fetch_cboe.py` 的 `small_scan` 从纳斯达克全市场列表筛出“小盘 + 有流动性”的股票（约 840 只），用日线算成交量比、52 周位置、日波动等，加上做空持仓和 FINRA 卖空成交量，存成 `data/small.json`，网页打开“小盘”栏目时才加载。单独测试：`python3 src/fetch_cboe.py --small-only`（约 14 分钟）
+- 小盘正股：`fetch_cboe.py` 的 `small_scan` 从纳斯达克全市场列表筛出“小盘 + 有流动性”的股票（约 840 只），用日线算成交量比、52 周位置、日波动等，加上做空持仓和 FINRA 卖空成交量，存成 `data/small.json`，网页打开“小盘”栏目时才加载。单独测试：`python3 src/fetch_cboe.py --small-only`（约 14 分钟）。盘前行情：`--premarket`（约 6 分钟）抓小盘池的盘前价和成交量，存成 `data/premarket.json`，由 Cloudflare 在每个交易日 UTC 13:00 触发工作流的 `pre` 模式
 - `src/data/`：网站数据（`data.json` 公司和 ETF 资料、`options_latest.json` 最新期权数据和新闻、`intraday.json` 当天分时走势、`hist.json` 每日期权成交和 IV30 记录、`mcap.json` 市值）
 - `.github/workflows/update.yml`：定时运行上面两个脚本并发布到 GitHub Pages；完整更新后把最新数据存回 `src/data/`
 

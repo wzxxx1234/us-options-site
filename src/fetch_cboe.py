@@ -473,6 +473,44 @@ def small_scan(day, earn=None):
               open(os.path.join(DATA, 'small.json'), 'w'), separators=(',', ':'), ensure_ascii=False)
     print(f'小盘池完成：{len(out)} 只（{fail} 只没取到日线），其中 {nn} 只带新闻，用时 {time.time() - t0:.0f}s', flush=True)
 
+# ---------- 盘前行情：每个交易日开盘前抓一次小盘池的盘前价和盘前成交量，存成 data/premarket.json ----------
+def premarket_scan(force=False):
+    from zoneinfo import ZoneInfo
+    now = datetime.datetime.now(ZoneInfo('America/New_York'))
+    if not force and (now.weekday() >= 5 or now.hour * 60 + now.minute >= 9 * 60 + 40):
+        print('不是交易日，或者已经开盘，不抓盘前数据', flush=True)
+        return
+    t0 = time.time()
+    syms = sorted(json.load(open(os.path.join(DATA, 'small.json')))['s'])
+    today = f'{now:%b} {now.day}, {now.year}'     # 例如 Nov 18, 2026，和纳斯达克写的“数据更新时间”对得上才算今天的
+
+    def one(s):
+        j = nq_json(f'https://api.nasdaq.com/api/quote/{s}/extended-trading?assetclass=stocks&markettype=pre')
+        d = (j or {}).get('data') or {}
+        if today not in ((d.get('lastUpdateInfo') or [''])[0]): return s, None      # 不是今天的数据
+        rows = (d.get('infoTable') or {}).get('rows') or []
+        if not rows: return s, None                                                  # 盘前还没有成交
+        m = re.search(r'\$\s*([\d,]+\.?\d*)', rows[0].get('consolidated') or '')
+        if not m: return s, None
+        return s, [round(float(m.group(1).replace(',', '')), 4), int(_num(rows[0].get('volume')))]
+
+    out = {}
+    with ThreadPoolExecutor(6) as ex:
+        fut = [ex.submit(one, s) for s in syms]
+        for n, f in enumerate(as_completed(fut), 1):
+            try:
+                s, v = f.result()
+            except Exception:
+                continue
+            if v: out[s] = v
+            if n % 200 == 0: print(f'  盘前 {n}/{len(syms)}  {time.time() - t0:.0f}s', flush=True)
+    if not out:       # 一只都没有（盘前还没开始、节假日等）就不写文件，网站上也就不显示盘前行情
+        print('没有取到任何盘前成交，不更新', flush=True)
+        return
+    json.dump({'t': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'd': now.date().isoformat(), 's': out},
+              open(os.path.join(DATA, 'premarket.json'), 'w'), separators=(',', ':'))
+    print(f'盘前行情：{len(out)}/{len(syms)} 只有盘前成交，用时 {time.time() - t0:.0f}s', flush=True)
+
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
 
@@ -573,6 +611,9 @@ def summarize(sym, today, name, earn=None):
 def main():
     limit = int(sys.argv[sys.argv.index('--limit') + 1]) if '--limit' in sys.argv else 0
     t0 = time.time()
+    if '--premarket' in sys.argv:    # 只抓盘前行情（--force 不看时间，测试用）
+        premarket_scan('--force' in sys.argv)
+        return
     if '--small-only' in sys.argv:   # 只更新小盘池（用现有的数据日期），本地测试用
         day0 = json.load(open(os.path.join(DATA, 'options_latest.json')))['date']
         small_scan(day0, earnings())

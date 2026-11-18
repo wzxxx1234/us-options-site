@@ -214,6 +214,9 @@ h1 em{font-style:normal;color:var(--accent)}
 .smrisk{margin:6px 0 0;padding-left:20px;line-height:1.7;font-size:13.5px}.smrisk li{margin-bottom:4px}
 .smh2{font-family:var(--f-display);font-size:20px;margin:24px 0 8px}.smh2 small{margin-left:10px;font-size:12.5px;font-weight:400;color:var(--muted);font-family:inherit}
 @media (max-width:560px){.smn{max-width:84px}.smn small{display:none}.smhead h2{font-size:22px}}
+.smpmbar{margin:10px 0;padding:10px 14px;border-radius:12px;background:var(--warn-soft);color:var(--ink);display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline;font-size:13px;border-left:4px solid var(--warn)}.smpmbar b{color:var(--warn)}.smpmbar em{font-style:normal;color:var(--loss);font-weight:600}.smpmbar small{flex-basis:100%;color:var(--muted);font-size:12px}
+.smpm{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:2px 0 6px;font-size:13px}.smpm b{font-family:var(--f-mono);font-size:16px}.smpm i{font-style:normal;font-family:var(--f-mono);font-weight:700;font-size:12.5px;padding:2px 8px;border-radius:6px;color:var(--bg)}.smpm i.up{background:var(--gain)}.smpm i.dn{background:var(--loss)}.smpm span{color:var(--muted);font-size:12px}
+.smtab .dim{opacity:.45}
 .dalert{margin-top:12px;display:grid;gap:8px}
 .dalert p{margin:0;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6;border:1px solid transparent}
 .dalert p b{margin-right:8px}
@@ -997,12 +1000,27 @@ function etfHTML(){
 /* ---- 自选看板 ---- */
 /* ---- 小盘正股：每天收盘后从全市场筛出“小盘 + 有流动性”的股票（small.json，打开这个栏目才加载） ---- */
 const SM={ready:false,loading:false,err:false,d:'',finra:'',rule:{},s:{}};
-Object.assign(st,{sq:'',ss:'rv',sp:'',sm:'',sd:'',sr:'',sc:'',sf:'',si:'',sx:'',sg:'',sshown:60});
+Object.assign(st,{sq:'',ss:'',sp:'',sm:'',sd:'',sr:'',sc:'',sf:'',si:'',sx:'',sg:'',sshown:60});
 URLK.push('sq','ss','sp','sm','sd','sr','sc','sf','si','sx','sg');
 let SMRES=[],smCur='',dmode='';
 const POS=store.get('pos',{acct:'',risk:'1'});
 function smLoad(){if(SM.ready||SM.loading)return Promise.resolve();SM.loading=true;
-  return fetch('small.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{Object.assign(SM,j,{ready:true})}).catch(()=>{SM.err=true}).finally(()=>{SM.loading=false;if(st.view==='small'||st.view==='watch')render()})}
+  return fetch('small.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{Object.assign(SM,j,{ready:true});pmLoad()}).catch(()=>{SM.err=true}).finally(()=>{SM.loading=false;if(st.view==='small'||st.view==='watch')render()})}
+/* ---- 盘前行情：每个交易日美东 8:00 左右更新一次（premarket.json），只在开盘前、收盘数据还没更新时显示 ---- */
+const PM={ready:false,s:{},d:'',t:''};
+const pmLoad=()=>fetch('premarket.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{Object.assign(PM,j,{ready:true})}).catch(()=>{}).finally(()=>{if(PM.ready&&(st.view==='small'||st.view==='watch'))render()});
+const etMin=()=>{try{const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());return(+p.find(x=>x.type==='hour').value%24)*60+ +p.find(x=>x.type==='minute').value}catch(e){return 0}};
+const pmOn=()=>!!(PM.ready&&PM.d&&SM.ready&&PM.d>SM.d&&etToday<=PM.d);
+const pmOpen=()=>etToday===PM.d&&etMin()>=570;
+const pmChg=(d,t,sign)=>{const p=PM.s[t];if(!p||p[1]<1e4)return false;const c=(p[0]/d.p-1)*100;return sign>0?c>=3:c<=-3};
+const pmTime=(tz,h12)=>{try{return new Intl.DateTimeFormat(tz==='bj'?'zh-CN':'en-US',{timeZone:tz==='bj'?'Asia/Shanghai':'America/New_York',hour:'numeric',minute:'2-digit',hour12:false}).format(new Date(PM.t))}catch(e){return''}};
+const ssv=()=>st.ss||(pmOn()?'pma':'rv');
+function smPMcells(t,d){if(!pmOn())return'';const p=PM.s[t];if(!p)return'<td class="num dim">—</td><td class="num dim">—</td>';const c=(p[0]/d.p-1)*100;
+  return `<td class="num ${c>=0?'up':'dn'}">${c>0?'+':''}${c.toFixed(2)}%</td><td class="num${p[1]<1e4?' dim':''}">${fmtN(p[1])}</td>`}
+function smPMbar(){if(!pmOn())return'';const n=Object.keys(PM.s).filter(t=>SM.s[t]).length;
+  return `<div class="smpmbar"><b>盘前行情</b><span>美东 ${pmTime('et')} 更新（北京时间 ${pmTime('bj')}）· ${n} 只有盘前成交${pmOpen()?' · <em>现在已经开盘，这是开盘前的数据，请看券商的实时行情</em>':''}</span><small>盘前成交很少，价格容易大幅跳动，别只看涨跌幅；成交不到 1 万股的盘前数据已标灰，不太可靠。</small></div>`}
+function smPMrow(t,d0){if(!pmOn())return'';const p=PM.s[t];if(!p)return'<p class="d-sm">盘前还没有成交。</p>';const c=(p[0]/d0.p-1)*100;
+  return `<div class="smpm"><b>盘前 $${p[0].toFixed(2)}</b><i class="${c>=0?'up':'dn'}">${c>0?'+':''}${c.toFixed(2)}%</i><span>成交 ${fmtN(p[1])} 股 · 美东 ${pmTime('et')} 更新${p[1]<1e4?' · 成交很少，价格不可靠':''}</span></div>`}
 const smDays=er=>er?dayDiff(etToday,er[0]):null;
 const smPos=d=>d.h>d.l?(d.p-d.l)/(d.h-d.l):.5;
 const smFromHigh=d=>d.h?(d.h-d.p)/d.h*100:0;
@@ -1010,6 +1028,8 @@ const smDV=v=>'$'+(v>=10000?(v/10000).toFixed(1)+' 亿':Math.round(v)+' 万');
 const smTag=([l,c,t])=>`<span class="smtag ${c}" title="${esc(t)}">${l}</span>`;
 const smQuick={up:d=>d.c>=5&&d.rv>=2,dn:d=>d.c<=-5&&d.rv>=2,gap:d=>Math.abs(d.gap)>=5,nh:d=>!!d.nh,nl:d=>!!d.nl,er:d=>{const n=smDays(d.er);return n!=null&&n>=0&&n<=7},si:d=>(d.sip||0)>=15};
 const SMQ=[['up','放量大涨','涨幅 5% 以上，成交量是平时的 2 倍以上'],['dn','放量大跌','跌幅 5% 以上，成交量是平时的 2 倍以上'],['gap','跳空','开盘价和前一天收盘价相差 5% 以上'],['nh','52 周新高','今天创了一年来的新高'],['nl','52 周新低','今天创了一年来的新低'],['er','本周财报','7 天内公布财报'],['si','高做空','做空的股数占总股本 15% 以上']];
+const SMQ_PM=[['pu','盘前大涨','盘前涨 3% 以上，且盘前成交至少 1 万股'],['pd','盘前大跌','盘前跌 3% 以上，且盘前成交至少 1 万股'],['pv','盘前放量','盘前成交量已达到平时一整天的 20% 以上']];
+Object.assign(smQuick,{pu:(d,t)=>pmChg(d,t,1),pd:(d,t)=>pmChg(d,t,-1),pv:(d,t)=>{const p=PM.s[t];return !!p&&d.av>0&&p[1]>=d.av*.2}});
 const SMF={sp:{lt5:d=>d.p<5,m5:d=>d.p>=5&&d.p<20,gt20:d=>d.p>=20},sm:{micro:d=>d.mc<3,s:d=>d.mc>=3&&d.mc<10,m:d=>d.mc>=10},
   sd:{1000:d=>d.dv>=1000,5000:d=>d.dv>=5000,20000:d=>d.dv>=20000},sr:{2:d=>d.rv>=2,3:d=>d.rv>=3,5:d=>d.rv>=5},
   sc:{up5:d=>d.c>=5,up10:d=>d.c>=10,dn5:d=>d.c<=-5,dn10:d=>d.c<=-10},sf:{hi10:d=>smFromHigh(d)<=10,hi25:d=>smFromHigh(d)<=25,lo20:d=>smPos(d)<=.2},
@@ -1019,11 +1039,12 @@ const SMO=[['sp','股价',[['lt5','低于 $5'],['m5','$5 ~ $20'],['gt20','高于
   ['sc','今天涨跌',[['up5','涨 5% 以上'],['up10','涨 10% 以上'],['dn5','跌 5% 以上'],['dn10','跌 10% 以上']]],['sf','52 周位置',[['hi10','离新高 10% 以内'],['hi25','离新高 25% 以内'],['lo20','在低位（一年区间的下 20%）']]],
   ['si','做空占总股本',[['10','10% 以上'],['20','20% 以上']]],['sg','地区',[['us','美国'],['cn','中国 / 香港'],['ot','其他']]]];
 const SMS={rv:['成交量比 高→低',d=>-d.rv],c:['涨幅 高→低',d=>-d.c],cd:['跌幅 大→小',d=>d.c],dv:['日成交额 大→小',d=>-d.dv],mc:['市值 大→小',d=>-d.mc],mcs:['市值 小→大',d=>d.mc],si:['做空占比 高→低',d=>-(d.sip||0)],hi:['离 52 周新高 近→远',d=>smFromHigh(d)],atr:['日波动 大→小',d=>-d.atr],er:['财报日 近→远',d=>{const n=smDays(d.er);return n==null||n<0?1e9:n}]};
+Object.assign(SMS,{pma:['盘前涨跌幅度 大→小',(d,t)=>{const p=PM.s[t];return p&&p[1]>0?-Math.abs((p[0]/d.p-1)*100):1e9}],pmc:['盘前涨幅 高→低',(d,t)=>{const p=PM.s[t];return p?-(p[0]/d.p-1)*100:1e9}],pmv:['盘前成交量 大→小',(d,t)=>{const p=PM.s[t];return p?-p[1]:1e9}]});
 function smList(){const q=st.q,fs=SMO.map(o=>o[0]).filter(k=>st[k]);
   const r=Object.entries(SM.s).filter(([t,d])=>{
     if(q&&!(t.toLowerCase().includes(q)||d.n.toLowerCase().includes(q)||(d.ind||'').toLowerCase().includes(q)))return false;
-    if(st.sq&&!smQuick[st.sq](d))return false;for(const k of fs)if(!SMF[k][st[k]](d))return false;if(st.sx&&d.sec!==st.sx)return false;return true});
-  const key=(SMS[st.ss]||SMS.rv)[1];r.sort((a,b)=>key(a[1])-key(b[1])||a[0].localeCompare(b[0]));return r.map(x=>x[0])}
+    if(st.sq&&!smQuick[st.sq](d,t))return false;for(const k of fs)if(!SMF[k][st[k]](d))return false;if(st.sx&&d.sec!==st.sx)return false;return true});
+  const key=(SMS[ssv()]||SMS.rv)[1];r.sort((a,b)=>key(a[1],a[0])-key(b[1],b[0])||a[0].localeCompare(b[0]));return r.map(x=>x[0])}
 function smTags(d){const o=[],yr=new Date().getFullYear(),n=smDays(d.er);
   if(d.rv>=3)o.push(['放量','up','成交量是平时的 '+d.rv.toFixed(1)+' 倍']);
   if(d.nh)o.push(['新高','up','今天创 52 周新高']);if(d.nl)o.push(['新低','dn','今天创 52 周新低']);
@@ -1038,9 +1059,9 @@ function smTags(d){const o=[],yr=new Date().getFullYear(),n=smDays(d.er);
 function smLine(a,w,h){if(!a||a.length<2)return'';const lo=Math.min(...a),hi=Math.max(...a),r=hi-lo||1,N=a.length-1,X=i=>(i/N*w).toFixed(1),Y=v=>(2+(hi-v)/r*(h-4)).toFixed(1),ln=a.map((v,i)=>(i?'L':'M')+X(i)+' '+Y(v)).join('');
   return `<svg class="ic ${a[N]>=a[0]?'up':'dn'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path class="ar" d="${ln}L${w} ${h}L0 ${h}Z"/><path class="ln" d="${ln}"/></svg>`}
 const smBar=d=>`<span class="smbar" title="52 周最低 $${d.l}，最高 $${d.h}"><i style="left:${(smPos(d)*100).toFixed(0)}%"></i></span>`;
-const SMTH=`<tr><th>代码 / 名称</th><th class="num">价格</th><th class="num">今天</th><th class="num" title="今天成交量 ÷ 过去 30 天平均成交量">量比</th><th class="num" title="今天成交的美元总额">日成交额</th><th class="num">市值</th><th class="num" title="做空的股数占总股本的比例（每两周公布一次，不是实时）">做空占比</th><th title="今天的价格在一年最低价到最高价之间的位置">52 周位置</th><th>60 日走势</th><th>提示</th></tr>`;
+const smTH=()=>`<tr><th>代码 / 名称</th><th class="num">价格</th><th class="num">今天</th>${pmOn()?'<th class="num" title="盘前价相对昨天收盘价的涨跌">盘前</th><th class="num" title="盘前成交的股数">盘前量</th>':''}<th class="num" title="今天成交量 ÷ 过去 30 天平均成交量">量比</th><th class="num" title="今天成交的美元总额">日成交额</th><th class="num">市值</th><th class="num" title="做空的股数占总股本的比例（每两周公布一次，不是实时）">做空占比</th><th title="今天的价格在一年最低价到最高价之间的位置">52 周位置</th><th>60 日走势</th><th>提示</th></tr>`;
 function smRow(t,d){return `<tr data-sm="${t}"><td class="nw"><div class="smc">${starBtn(t)}<button class="lbtk" data-sm="${t}">${t}</button><span class="smn">${esc(d.n)}<small>${esc(d.sec)}${d.ind?' · '+esc(d.ind):''}</small></span></div></td>
-  <td class="num">$${d.p.toFixed(2)}</td><td class="num ${d.c>=0?'up':'dn'}">${d.c>0?'+':''}${d.c.toFixed(2)}%</td><td class="num${d.rv>=3?' hi':''}">${d.rv.toFixed(1)}×</td><td class="num">${smDV(d.dv)}</td><td class="num">${fmtCap(d.mc)}</td>
+  <td class="num">$${d.p.toFixed(2)}</td><td class="num ${d.c>=0?'up':'dn'}">${d.c>0?'+':''}${d.c.toFixed(2)}%</td>${smPMcells(t,d)}<td class="num${d.rv>=3?' hi':''}">${d.rv.toFixed(1)}×</td><td class="num">${smDV(d.dv)}</td><td class="num">${fmtCap(d.mc)}</td>
   <td class="num">${d.sip!=null?d.sip+'%':'—'}</td><td>${smBar(d)}</td><td><div class="smsp">${smLine(d.sp.map(x=>x/100),80,24)}</div></td><td class="smts">${smTags(d).slice(0,3).map(smTag).join('')}</td></tr>`}
 function smallHTML(){
   if(!SM.ready){if(!SM.err)smLoad();return `<div class="empty"><b>${SM.err?'小盘股数据暂时读不到':'正在读取小盘股数据…'}</b>${SM.err?'请用线上网址打开（直接双击本地文件读不到数据），或稍后再试。':''}</div>`}
@@ -1048,11 +1069,11 @@ function smallHTML(){
   const sel=(k,label,opts)=>`<label class="smf"><span>${label}</span><select data-sf="${k}"><option value="">不限</option>${opts.map(([v,l])=>`<option value="${v}"${st[k]===v?' selected':''}>${l}</option>`).join('')}</select></label>`;
   const act=SMO.some(o=>st[o[0]])||st.sq||st.sx||st.q,fo=st.sfo==null?innerWidth>760:st.sfo,nf=SMO.filter(o=>st[o[0]]).length+(st.sx?1:0);
   return `<div class="smhead"><h2>小盘正股<small>市值 ${(R.mcap_min/1e8||0.3).toFixed(1)} ~ ${(R.mcap_max/1e8||20).toFixed(0)} 亿美元 · 股价 ≥ $${R.price_min||2} · 日成交额 ≥ ${((R.dv_min||5e6)/1e4).toFixed(0)} 万美元</small></h2>
-  <p>数据：美东 ${md(SM.d)} 收盘后。价格和成交来自纳斯达克；做空占比用最近一期做空持仓（每两周公布一次，不是实时），卖空成交占比来自 FINRA（${SM.finra?md(SM.finra):'—'}）。<b>不是实时行情，盘中请看券商。</b>名单按前一个交易日的市值和成交额圈定，当天暴涨的股票市值可能已经超过 20 亿。不构成投资建议。</p></div>
-  <div class="smq">${SMQ.map(([k,l,tip])=>`<button class="chip" data-sq="${k}" aria-pressed="${st.sq===k}" title="${tip}">${l}<small>${Object.values(SM.s).filter(smQuick[k]).length}</small></button>`).join('')}</div>
+  <p>数据：美东 ${md(SM.d)} 收盘后。价格和成交来自纳斯达克；做空占比用最近一期做空持仓（每两周公布一次，不是实时），卖空成交占比来自 FINRA（${SM.finra?md(SM.finra):'—'}）。<b>不是实时行情，盘中请看券商。</b>名单按前一个交易日的市值和成交额圈定，当天暴涨的股票市值可能已经超过 20 亿。盘前行情每个交易日美东 8:00 左右更新一次（北京时间晚上 9 点）。不构成投资建议。</p></div>
+  ${smPMbar()}<div class="smq">${(pmOn()?SMQ_PM:[]).concat(SMQ).map(([k,l,tip])=>`<button class="chip" data-sq="${k}" aria-pressed="${st.sq===k}" title="${tip}">${l}<small>${Object.entries(SM.s).filter(([t,d])=>smQuick[k](d,t)).length}</small></button>`).join('')}</div>
   <details class="smfd"${fo?' open':''}><summary>筛选条件${nf?`<small>${nf}</small>`:''}</summary><div class="smfilters">${SMO.map(([k,l,o])=>sel(k,l,o)).join('')}${sel('sx','行业',secs.map(s=>[s,s]))}</div></details>
-  <div class="res-head"><p class="count">共 <b>${n}</b> 只${n!==all?`（小盘池一共 ${all} 只）`:''}</p>${act?'<button class="clear-all strong" id="sm-clear">× 清除条件</button>':''}<label class="smsort"><span>排序</span><select class="sort" data-sf="ss">${Object.entries(SMS).map(([v,o])=>`<option value="${v}"${st.ss===v?' selected':''}>${o[0]}</option>`).join('')}</select></label></div>
-  ${n?`<div class="tbl-wrap"><table class="smtab"><thead>${SMTH}</thead><tbody>${shown.map(t=>smRow(t,SM.s[t])).join('')}</tbody></table></div>${n>shown.length?`<button class="more" id="sm-more">再显示 60 只（还有 ${n-shown.length} 只）</button>`:''}`:'<div class="empty"><b>没有符合条件的股票</b>放宽几个条件再试试。</div>'}
+  <div class="res-head"><p class="count">共 <b>${n}</b> 只${n!==all?`（小盘池一共 ${all} 只）`:''}</p>${act?'<button class="clear-all strong" id="sm-clear">× 清除条件</button>':''}<label class="smsort"><span>排序</span><select class="sort" data-sf="ss">${Object.entries(SMS).filter(([v])=>pmOn()||!v.startsWith('pm')).map(([v,o])=>`<option value="${v}"${ssv()===v?' selected':''}>${o[0]}</option>`).join('')}</select></label></div>
+  ${n?`<div class="tbl-wrap"><table class="smtab"><thead>${smTH()}</thead><tbody>${shown.map(t=>smRow(t,SM.s[t])).join('')}</tbody></table></div>${n>shown.length?`<button class="more" id="sm-more">再显示 60 只（还有 ${n-shown.length} 只）</button>`:''}`:'<div class="empty"><b>没有符合条件的股票</b>放宽几个条件再试试。</div>'}
   <details class="smtips"><summary>交易小盘股前，先查这几项</summary><ul><li><b>流动性</b>：日成交额够不够？你这一单占它一天成交额的多少？（下面的仓位计算器会算）</li><li><b>稀释</b>：最近有没有融资（增发股票、可转债、认股权证）？去 SEC 公告里看 S-3、424B、8-K。</li><li><b>现金</b>：手上的现金够烧几个季度？有没有“持续经营存疑”的警告？看最新的 10-Q / 10-K。</li><li><b>做空</b>：做空占总股本多少？高了容易出现挤空行情，也说明有人在看空。</li><li><b>财报</b>：下一次财报是哪天？小盘股财报后常常一天涨跌 20% 以上。</li><li><b>内部人</b>：高管有没有在买？大股东有没有在卖？</li><li><b>止损</b>：先定止损价，再算该买多少股，别反过来。</li></ul></details>
   <section class="smcalc"><h2>正股仓位计算器<small>先定止损，再算买多少</small></h2><p class="d-sm">输入股票代码（可选）会自动填入当前价和一个参考止损（入场价减 1.5 倍日波动）。这只是起点，按你自己的交易计划改。只算做多。</p>${posHTML(true)}</section>`}
 /* 仓位计算：账户金额、单笔最多亏多少 %、入场价、止损价 -> 该买多少股 */
@@ -1090,7 +1111,7 @@ function openSmall(t){const d0=SM.s[t];if(!d0)return;const d=$('#drawer');if(!d.
   d.innerHTML=`<div class="d-handle" aria-hidden="true"></div><div class="d-bar"><button class="ib" id="d-prev" aria-label="上一只"${pos>0?'':' disabled'}>‹</button><button class="ib" id="d-next" aria-label="下一只"${pos>=0&&pos<SMRES.length-1?'':' disabled'}>›</button><span class="sp1">${pos>=0?`${pos+1} / ${SMRES.length}`:''}</span>${starBtn(t,'ib')}<button class="ib" id="d-x" aria-label="关闭">×</button></div>
   <div class="d-body"><div class="d-tk">${esc(t)}<button class="copy" id="d-copy">复制代码</button></div><div class="d-nm" id="d-title">${esc(d0.n)}</div><div class="d-en">${esc(d0.sec)}${d0.ind?' · '+esc(d0.ind):''}${d0.cty&&d0.cty!=='United States'?' · '+esc(d0.cty):''}</div>
   <div class="d-row">${tags.map(smTag).join('')||'<span class="tg">没有特别提示</span>'}</div>
-  <div class="smprice"><b>$${d0.p.toFixed(2)}</b><i class="${d0.c>=0?'up':'dn'}">${d0.c>0?'+':''}${d0.c.toFixed(2)}%</i><span>美东 ${md(SM.d)} 收盘</span></div>
+  <div class="smprice"><b>$${d0.p.toFixed(2)}</b><i class="${d0.c>=0?'up':'dn'}">${d0.c>0?'+':''}${d0.c.toFixed(2)}%</i><span>美东 ${md(SM.d)} 收盘</span></div>${smPMrow(t,d0)}
   ${n!=null&&n>=0&&n<=14?`<div class="estrip${n<=3?' hot':''} big"><b>财报 ${md(d0.er[0])} ${wkd(d0.er[0])}${d0.er[1]==='pre'?' 盘前':d0.er[1]==='post'?' 盘后':''}</b><span>${n===0?'今天':n===1?'明天':n+' 天后'}</span></div>`:''}
   <div class="d-h">最近 60 个交易日<small>收盘价 · 高 $${hi.toFixed(2)} · 低 $${lo.toFixed(2)}</small></div><div class="smchart">${smLine(sp,560,110)}</div>
   <div class="smrange"><span>52 周低 $${d0.l}</span>${smBar(d0)}<span>52 周高 $${d0.h}</span></div>
@@ -1111,7 +1132,7 @@ $('#main').addEventListener('click',e=>{if(st.view!=='small'&&st.view!=='watch')
 $('#main').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('smfd'))st.sfo=e.target.open},true);
 $('#main').addEventListener('change',e=>{if(st.view!=='small')return;const t=e.target;if(t.dataset&&t.dataset.sf){st[t.dataset.sf]=t.value;st.sshown=60;render()}});
 /* 自选里的小盘股 */
-function smWatchHTML(list){return `<h2 class="smh2">自选小盘股<small>数据：美东 ${md(SM.d)} 收盘</small></h2><div class="tbl-wrap"><table class="smtab"><thead>${SMTH}</thead><tbody>${list.map(t=>SM.s[t]?smRow(t,SM.s[t]):`<tr><td class="nw">${starBtn(t)}<span class="lbtk">${esc(t)}</span></td><td colspan="9" class="mu">今天不在小盘池里（成交额不够、市值超过 20 亿，或股价低于 $2）</td></tr>`).join('')}</tbody></table></div>`}
+function smWatchHTML(list){return `<h2 class="smh2">自选小盘股<small>数据：美东 ${md(SM.d)} 收盘</small></h2><div class="tbl-wrap"><table class="smtab"><thead>${smTH()}</thead><tbody>${list.map(t=>SM.s[t]?smRow(t,SM.s[t]):`<tr><td class="nw">${starBtn(t)}<span class="lbtk">${esc(t)}</span></td><td colspan="${pmOn()?11:9}" class="mu">今天不在小盘池里（成交额不够、市值超过 20 亿，或股价低于 $2）</td></tr>`).join('')}</tbody></table></div>`}
 function watchHTML(){const extra=[...favs].filter(t=>!CI.has(t)&&!ETFSET.has(t)),hasMain=[...favs].some(t=>CI.has(t)||ETFSET.has(t));
   if(!extra.length)return watchHTML0();let h=hasMain?watchHTML0():'';
   if(SM.ready)h+=smWatchHTML(extra);else{if(!SM.err)smLoad();h+=`<p class="d-sm">${SM.err?'小盘股数据暂时读不到。':'正在读取小盘股数据…'}</p>`}
@@ -1694,7 +1715,7 @@ const io2=(a,cls)=>a.split(' ').map(t=>`<span class="io ${cls}">${t}</span>`).jo
 const AUDIT=`<div class="prose">
 <h2>核查记录<small>2026-11-12</small></h2>
 <p class="txt">原表格里的三份成分股名单逐只对照了维基百科当前列表，有出入的地方再用纳斯达克、标普道琼斯指数的公告和新闻报道交叉确认。下面是改了什么、没改什么。</p>
-<div class="fix"><h3>小盘正股数据来源</h3><p>“小盘”栏目里的名单来自纳斯达克公开的全市场股票列表：市值 0.3 到 20 亿美元、股价不低于 2 美元、成交额不低于 500 万美元（已排除 SPAC 空壳公司、权证和优先股）。价格、涨跌、成交量和 52 周高低都用纳斯达克的日线重新算（筛选器列表有时停在前一天，不能直接用）。做空占比用纳斯达克公布的最近一期做空持仓除以总股本（总股本按市值÷股价估算，不是流通股；这个数据每两周才公布一次），卖空成交占比来自 FINRA 每天公布的卖空成交量文件，新闻来自雅虎财经。所有数据都是收盘后的快照，不是实时行情。</p></div>
+<div class="fix"><h3>小盘正股数据来源</h3><p>“小盘”栏目里的名单来自纳斯达克公开的全市场股票列表：市值 0.3 到 20 亿美元、股价不低于 2 美元、成交额不低于 500 万美元（已排除 SPAC 空壳公司、权证和优先股）。价格、涨跌、成交量和 52 周高低都用纳斯达克的日线重新算（筛选器列表有时停在前一天，不能直接用）。做空占比用纳斯达克公布的最近一期做空持仓除以总股本（总股本按市值÷股价估算，不是流通股；这个数据每两周才公布一次），卖空成交占比来自 FINRA 每天公布的卖空成交量文件，新闻来自雅虎财经。盘前行情来自纳斯达克的盘前成交数据，每个交易日开盘前抓一次（美东 8:00 左右），涨跌幅按我们自己的昨收价算（纳斯达克自己的昨收有时落后一天）。所有数据都是快照，不是实时行情。</p></div>
 <div class="fix"><h3>期权数据来源 <span class="tag">${ODATE}</span></h3><p>期权成交量、未平仓量、P/C、IV30、平值买卖价差和 7 天内到期日数，都是脚本从 Cboe 网站公开的延时行情接口逐只抓期权链算出来的（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）。范围是本站的公司、ETF 和指数期权（SPX、XSP、NDX、XND、RUT、MRUT、DJX、OEX、VIX）。这个接口 Cboe 没有正式说明，冷门标的的数据可能比整体晚一天，页面上会标“数据日”。ETF 列表在原来的基础上，补了 Macroption 统计的 2026 年 ETF 期权日均成交前 100 名里网站原来没有的 10 只行业、主题、商品和加密 ETF（MAGS、SILJ、AMLP、MSOS、ASHR、BNO、WEAT、GBTC、EETH、XRPC），这 10 只的中文说明是我写的，没有逐条核对。杠杆和反向类 ETF 一律不收，网站原有的 23 只（TQQQ、SQQQ、SOXL、SOXS、NVDL、TSLL、UVXY、SVXY 等）也按你的要求删掉了。</p></div>
 <div class="audit-sum"><div><b>24</b><span>处成分股归属改动</span></div><div><b>3</b><span>家已退市公司移除</span></div><div><b>1</b><span>家新上市公司补入</span></div><div><b>503</b><span>只标普500 的行业分类全部一致</span></div></div>
 
