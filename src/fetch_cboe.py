@@ -478,7 +478,7 @@ def small_scan(day, earn=None):
         print('公司简介更新失败（不影响其他数据）：', e, flush=True)
 
 # ---------- 盘前行情：每个交易日开盘前抓一次小盘池的盘前价和盘前成交量，存成 data/premarket.json ----------
-def premarket_scan(force=False):
+def premarket_scan(force=False, limit=0):
     from zoneinfo import ZoneInfo
     now = datetime.datetime.now(ZoneInfo('America/New_York'))
     if not force and (now.weekday() >= 5 or now.hour * 60 + now.minute >= 9 * 60 + 40):
@@ -486,12 +486,13 @@ def premarket_scan(force=False):
         return
     t0 = time.time()
     syms = sorted(json.load(open(os.path.join(DATA, 'small.json')))['s'])
+    if limit: syms = syms[:limit]      # 测试用
     today = f'{now:%b} {now.day}, {now.year}'     # 例如 Nov 18, 2026，和纳斯达克写的“数据更新时间”对得上才算今天的
 
     def one(s):
         j = nq_json(f'https://api.nasdaq.com/api/quote/{s}/extended-trading?assetclass=stocks&markettype=pre')
         d = (j or {}).get('data') or {}
-        if today not in ((d.get('lastUpdateInfo') or [''])[0]): return s, None      # 不是今天的数据
+        if f'Data last updated {today}' not in ' '.join(d.get('lastUpdateInfo') or []): return s, None      # 不是今天的数据（盘前这句在第二行，盘后在第一行，所以整段找）
         rows = (d.get('infoTable') or {}).get('rows') or []
         if not rows: return s, None                                                  # 盘前还没有成交
         m = re.search(r'\$\s*([\d,]+\.?\d*)', rows[0].get('consolidated') or '')
@@ -652,7 +653,7 @@ def main():
     limit = int(sys.argv[sys.argv.index('--limit') + 1]) if '--limit' in sys.argv else 0
     t0 = time.time()
     if '--premarket' in sys.argv:    # 只抓盘前行情（--force 不看时间，测试用）
-        premarket_scan('--force' in sys.argv)
+        premarket_scan('--force' in sys.argv, limit)
         return
     if '--profiles-only' in sys.argv:    # 只更新小盘股公司简介（用现有的 small.json 名单）
         small_profiles(list(json.load(open(os.path.join(DATA, 'small.json')))['s']))
