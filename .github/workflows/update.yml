@@ -18,9 +18,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'full 全量抓取 / rebuild 只重新生成网页 / quick 只抓 60 只测试'
+        description: 'full 全量抓取 / rebuild 只重新生成网页 / quick 只抓 60 只测试 / auto 完整更新，但网站数据 10 小时内更新过就跳过（Cloudflare 定时触发用这个）'
         type: choice
-        options: [full, rebuild, quick]
+        options: [full, rebuild, quick, auto]
         default: full
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
     steps:
       - id: c
         run: |
-          if [ "${{ github.event_name }}" != "schedule" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "${{ github.event_name }}" != "schedule" ] && [ "${{ inputs.mode }}" != "auto" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
           h=$(curl -fsSL "$PAGES_URL/options_latest.json" | python3 -c 'import json,sys,datetime as D;d=json.load(sys.stdin);t=D.datetime.fromisoformat(d["fetched"][:19]);print(int((D.datetime.utcnow()-t).total_seconds()//3600))' || echo 99)
           echo "网站上的数据是 $h 小时前抓的"
           if [ "$h" -lt 10 ]; then echo "已经更新过，这次跳过"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      MODE: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[完整更新]') && 'full' || 'rebuild') || github.event_name == 'schedule' && 'full' || inputs.mode }}
+      MODE: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[完整更新]') && 'full' || 'rebuild') || github.event_name == 'schedule' && 'full' || (inputs.mode == 'auto' && 'full' || inputs.mode) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
