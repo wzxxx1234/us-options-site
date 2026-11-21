@@ -559,8 +559,104 @@ def third_friday(x):
     d = datetime.date(x.year, x.month, 15)
     return d + datetime.timedelta(days=(4 - d.weekday()) % 7)
 
-def summarize(sym, today, name, earn=None):
-    j = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/options/{sym}.json'))
+# ---------- Cboe 拒绝访问（403）时的备用：纳斯达克期权链 ----------
+# 纳斯达克的期权链有每个合约的买卖价、成交量、未平仓，但没有隐含波动率，所以 IV30 用平值跨式价估算：
+# 平值 Call + Put 的中间价之和 ≈ 0.8 × 波动率 × 股价 × √到期时间，取 30 天前后两个到期日插值。指数期权（SPX 等）纳斯达克没有。
+CBOE_DOWN = {'n': 0}      # 连续被 Cboe 拒绝的次数，达到 5 次后这次运行不再试 Cboe
+
+def _nq_closes(sym, cls, today):
+    j = nq_json(f'https://api.nasdaq.com/api/quote/{sym}/historical?assetclass={cls}&fromdate={(today - datetime.timedelta(days=10)).isoformat()}&limit=5&todate={today.isoformat()}')
+    rows = (((j or {}).get('data') or {}).get('tradesTable') or {}).get('rows') or []
+    out = []
+    for r in rows:
+        try:
+            m, d, y = r['date'].split('/'); out.append((f'{y}-{m}-{d}', _num(r['close'])))
+        except Exception:
+            pass
+    out.sort(reverse=True)
+    return out
+
+def est_iv30(by, px, today):
+    pts = []
+    for ex, strikes in by.items():
+        days = (ex - today).days
+        if days < 7: continue
+        both = [k for k, v in strikes.items() if 'C' in v and 'P' in v and all(x > 0 for x in v['C'] + v['P'])]
+        if not both or not px: continue
+        k = min(both, key=lambda k: abs(k - px))
+        s = sum((strikes[k][c][0] + strikes[k][c][1]) / 2 for c in 'CP')
+        pts.append((days, (s / (0.7979 * px)) ** 2))      # 总方差 = 波动率² × 年数
+    if not pts: return 0
+    pts.sort()
+    lo, hi = [p for p in pts if p[0] <= 30], [p for p in pts if p[0] >= 30]
+    if lo and hi and lo[-1][0] != hi[0][0]:
+        (d1, w1), (d2, w2) = lo[-1], hi[0]
+        w = w1 + (w2 - w1) * (30 - d1) / (d2 - d1)
+    else:
+        d, w = min(pts, key=lambda p: abs(p[0] - 30))
+        w = w * 30 / d
+    return round((w / (30 / 365)) ** 0.5 * 100, 1)
+
+def nasdaq_chain_json(sym, today, kind):
+    def nodata(msg):
+        e = RuntimeError(msg); e.code = 404; return e
+    if sym.startswith('_'): raise nodata('纳斯达克没有指数期权')
+    cls = 'etf' if kind == 1 else 'stocks'
+    rows, off, last = [], 0, None
+    for _ in range(12):
+        t = []
+        for k in range(4):       # 偶尔会返回“Error while calling vendor”，隔几秒再试
+            j = nq_json(f'https://api.nasdaq.com/api/quote/{sym}/option-chain?assetclass={cls}&limit=5000&offset={off}&fromdate=all&todate=all&excode=oprac&callput=callput&money=all&type=all')
+            last = j
+            d = (j or {}).get('data') or {}
+            t = (d.get('table') or {}).get('rows') or []
+            if t or off: break
+            time.sleep(3 * (k + 1))
+        if not t: break
+        rows += t
+        off = len(rows)
+        if off >= int(d.get('totalRecord') or 0): break
+    if not rows:
+        codes = [m.get('code') for m in (((last or {}).get('status') or {}).get('bCodeMessage') or []) if isinstance(m, dict)]
+        if 1001 in codes: raise nodata('纳斯达克没有这只')
+        raise RuntimeError('纳斯达克暂时没有返回期权链')      # 没有 code 属性：算临时失败，最后会再重试
+    root = sym.replace('.', '')
+    opts, by, cur = [], {}, None
+    for r in rows:
+        g = r.get('expirygroup')
+        if g:
+            try: cur = datetime.datetime.strptime(g.strip(), '%B %d, %Y').date()
+            except ValueError: cur = None
+            continue
+        if cur is None or not r.get('strike'): continue
+        k = _num(r['strike'])
+        if k <= 0: continue
+        for cp, pre in (('C', 'c_'), ('P', 'p_')):
+            bid, ask = _num(r.get(pre + 'Bid')), _num(r.get(pre + 'Ask'))
+            opts.append({'option': f"{root}{cur:%y%m%d}{cp}{int(round(k * 1000)):08d}", 'volume': _num(r.get(pre + 'Volume')),
+                         'open_interest': _num(r.get(pre + 'Openinterest')), 'bid': bid, 'ask': ask})
+            by.setdefault(cur, {}).setdefault(k, {})[cp] = (bid, ask)
+    h = _nq_closes(sym, cls, today)
+    if len(h) < 2 or not h[1][1]: raise nodata('取不到收盘价')
+    px = h[0][1]
+    return {'timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), '_src': 'nq',
+            'data': {'current_price': px, 'price_change_percent': (px / h[1][1] - 1) * 100, 'iv30': est_iv30(by, px, today), 'iv30_change': 0,
+                     'last_trade_time': h[0][0] + 'T16:00:00', 'options': opts}}
+
+def chain_json(sym, today, kind):
+    if CBOE_DOWN['n'] < 5:
+        try:
+            j = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/options/{sym}.json'))
+            CBOE_DOWN['n'] = 0
+            return j
+        except Exception as e:
+            if getattr(e, 'code', 0) != 403: raise
+            CBOE_DOWN['n'] += 1
+            if CBOE_DOWN['n'] == 5: print('Cboe 一直拒绝访问（403），这次运行改用纳斯达克期权链（IV30 为估算）', flush=True)
+    return nasdaq_chain_json(sym, today, kind)
+
+def summarize(sym, today, name, earn=None, kind=0):
+    j = chain_json(sym, today, kind)
     d = j['data']
     root = name.replace('.', '')
     cv = pv = coi = poi = 0
@@ -641,7 +737,7 @@ def summarize(sym, today, name, earn=None):
         v, ymd, cp, k, oi = max(unu)
         top = ['20' + ymd[:2] + '-' + ymd[2:4] + '-' + ymd[4:], cp, k, int(v), int(oi)]
     return {
-        'ts': j.get('timestamp'), 'last': d.get('last_trade_time'),
+        'ts': j.get('timestamp'), 'last': d.get('last_trade_time'), 'src': j.get('_src', 'cboe'),
         'px': round(px, 2), 'chg': round(d.get('price_change_percent') or 0, 2),
         'iv': round(d.get('iv30') or 0, 1), 'ivc': round(d.get('iv30_change') or 0, 1),
         'cv': int(cv), 'pv': int(pv), 'coi': int(coi), 'poi': int(poi),
@@ -677,8 +773,8 @@ def main():
     earn = earnings()
     print(f'财报日历 {len(earn)} 只', flush=True)
     res, fail, nodata = {}, [], set()
-    with ThreadPoolExecutor(4) as ex:
-        fut = {ex.submit(summarize, q, today, s, earn.get(s)): (s, k) for q, s, k in uni}
+    with ThreadPoolExecutor(6) as ex:
+        fut = {ex.submit(summarize, q, today, s, earn.get(s), k): (s, k) for q, s, k in uni}
         for n, f in enumerate(as_completed(fut), 1):
             s, kind = fut[f]
             try:
@@ -698,11 +794,21 @@ def main():
         for s in retry:
             time.sleep(5)
             try:
-                r = summarize(('_' + s) if kinds[s] == 2 else s, today, s, earn.get(s)); r['k'] = kinds[s]; r['name'] = ''
+                r = summarize(('_' + s) if kinds[s] == 2 else s, today, s, earn.get(s), kinds[s]); r['k'] = kinds[s]; r['name'] = ''
                 res[s] = r; fail.remove(s)
             except Exception:
                 pass
 
+    # 期权数据取不够（Cboe 和备用都不行）：这次不更新期权数据、沿用上一次的，小盘股等其他数据照常更新
+    need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
+    if need and len(res) < need:
+        print(f'期权数据只取到 {len(res)} 只，少于 {need} 只：这次不更新期权数据（沿用上一次的），小盘股、简介等其他数据照常更新', flush=True)
+        if not limit:
+            try:
+                small_scan(today.isoformat(), earn)
+            except Exception as e:
+                print('小盘池更新失败：', e, flush=True)
+        return
     ts = max((r['ts'] for r in res.values() if r.get('ts')), default=None)
     # 数据日 = 大多数标的最后一笔成交的日期（美东），不是 Cboe 文件生成时间（UTC）
     from collections import Counter
@@ -739,7 +845,8 @@ def main():
     else:
         print('新闻 0 组', flush=True)
     print(f'市值 {len(mcap)} 只（{mcap_src}）', flush=True)
-    out = {'source': 'Cboe delayed quotes', 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
+    est = sum(1 for r in res.values() if r.get('src') == 'nq') > len(res) / 2     # 大部分来自纳斯达克备用，IV30 是估算的
+    out = {'source': 'Nasdaq option chain (IV30 estimated)' if est else 'Cboe delayed quotes', 'iv_est': est, 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
            'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res,
            'mcap': mcap, 'mcap_source': mcap_src,
            'earn': {t: v for t, v in earn.items() if t in res}, 'news': nw}

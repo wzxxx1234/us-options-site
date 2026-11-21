@@ -787,7 +787,7 @@ $('#stats').innerHTML=[[C.length,'家公司 / 股票'],[cnt(IDX[1][2]),'标普50
 /* ---- 期权数据日期 ---- */
 (()=>{const el=$('#datastamp');if(!el||!OD.date)return;let today='';try{today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date())}catch(e){}
   const age=today?Math.round((Date.parse(today)-Date.parse(OD.date))/864e5):0;
-  el.innerHTML=`<i></i>期权数据：美东 ${ODATE}${OD.ts?' '+OD.ts.slice(11,16):''} · 来自 Cboe，每个交易日收盘后自动更新${age>4?`<b>已经 ${age} 天没有新数据，自动更新可能出了问题</b>`:''}`;
+  el.innerHTML=`<i></i>期权数据：美东 ${ODATE}${OD.ts?' '+OD.ts.slice(11,16):''} · 来自 ${OD.est?'纳斯达克期权链（IV30 为估算）':'Cboe'}，每个交易日收盘后自动更新${age>4?`<b>已经 ${age} 天没有新数据，自动更新可能出了问题</b>`:''}`;
   if(age>4)el.classList.add('old')})();
 /* ---- 点阵 ---- */
 /* 正方化树图：方块面积按市值，先按行业分块 */
@@ -1547,6 +1547,7 @@ function dataAlert(){const el=$('#dalert');if(!el||!OD.date)return;
   const exp=lastSessionBefore(etToday),msgs=[];
   if(OD.date<exp)msgs.push(['bad',`期权数据还停在美东 ${ODATE}，最近一个交易日（${md(exp)} ${wkd(exp)}）的自动更新没有成功，网站上的数据是旧的。${link}`]);
   else{
+    if(OD.est)msgs.push(['info','期权数据现在来自纳斯达克的期权链（Cboe 暂时拒绝了自动更新的访问）：成交量、未平仓、买卖价差都是真实的，但 IV30 是用平值跨式价估算的，和券商里的数值会有差别；SPX、VIX 这类指数期权暂时没有。']);
     if((OD.n||0)<700)msgs.push(['warn',`这次只抓到 ${OD.n} 只标的（正常 730 只左右），部分数据缺失。${link}`]);
     if(!vals.some(o=>o[17]))msgs.push(['info','预期波动、财报日、Call/Put 墙、最大痛点和期权异动要等下一次完整的自动更新后才有数据（每个交易日美股收盘后，北京时间早上 5:45 开始）。']);
     else if(!vals.some(o=>o[16]))msgs.push(['warn',`这次没有取到纳斯达克的财报日历，财报日期和“7 天内的财报”暂时是空的。${link}`]);
