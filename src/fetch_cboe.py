@@ -552,6 +552,131 @@ def small_profiles(syms):
     json.dump({'d': datetime.date.today().isoformat(), 'p': keep}, open(p, 'w'), separators=(',', ':'), ensure_ascii=False)
     print(f'公司简介：新抓 {len(new)} 只（{miss} 只没有简介），共 {len(keep)} 只，用时 {time.time() - t0:.0f}s', flush=True)
 
+# ---------- 新股 IPO：纳斯达克 IPO 日历 + 每只新股的发行详情和上市后走势，存成 data/ipo.json ----------
+# 日历按月查：往前 8 个月（锁定期一般 180 天，要看哪些快到期）、往后 1 个月（即将上市）。
+# SPAC（空壳收购公司，发行价几乎都是 10 美元）单独标出来，网页上默认不显示。
+SPAC = re.compile(r'Acquisition|\bSPAC\b|Merger|Blank Check|\bCorp(oration)?\.?\s+[IVX]+\b|\bInc\.?\s+[IVX]+\b|Capital Corp|Equity Partners|Special Opportunit|Opportunit(y|ies) Corp|\s[IVX]{1,4}\.?$', re.I)
+IPO_X = {'NASDAQ Global Select': '纳斯达克', 'NASDAQ Global': '纳斯达克', 'NASDAQ Capital': '纳斯达克', 'NYSE': '纽交所', 'NYSE MKT': '纽交所美国', 'NYSE American': '纽交所美国', 'NYSE Arca': '纽交所'}
+
+def _mdy(s):
+    try:
+        m, d, y = str(s).strip().split('/'); return f'{int(y):04d}-{int(m):02d}-{int(d):02d}'
+    except Exception:
+        return ''
+
+def _ipo_over(deal):
+    j = nq_json(f'https://api.nasdaq.com/api/ipo/overview/?dealId={deal}')
+    d = (j or {}).get('data') or {}
+    o = {k: (v or {}).get('value') for k, v in (d.get('poOverview') or {}).items()}
+    if not o: return {}
+    r = {}
+    if _mdy(o.get('LockupPeriodExpirationDate')): r['lk'] = _mdy(o['LockupPeriodExpirationDate'])
+    if _mdy(o.get('QuietPeriodExpirationDate')): r['qp'] = _mdy(o['QuietPeriodExpirationDate'])
+    e = re.match(r'\s*([\d,]+)', str(o.get('NumberOfEmployees') or ''))
+    if e and _num(e.group(1)): r['emp'] = int(_num(e.group(1)))
+    if o.get('CEO') and o['CEO'] not in ('--', '-'): r['ceo'] = str(o['CEO'])[:60]
+    so = _num(o.get('SharesOutstanding'))
+    if so: r['so'] = int(so)
+    w = re.search(r"href='([^']+)'", str(o.get('CompanyWebsite') or ''))
+    if w: r['web'] = w.group(1)
+    if o.get('SECCIK'): r['cik'] = str(o['SECCIK']).lstrip('0')
+    ci = d.get('companyInformation') or {}
+    de = re.sub(r'\s+', ' ', str(ci.get('companyDescription') or '')).strip()
+    if de:
+        if len(de) > 900:
+            cut = de[:900]; de = cut[:cut.rfind('. ') + 1] if '. ' in cut[300:] else cut
+        r['de'] = de
+    return r
+
+def _ipo_perf(sym, ip, pd, day):
+    """上市后的日线：首日开盘、首日收盘、现价、上市以来最高最低、收盘价走势（最多 120 天）。"""
+    h = [x for x in _hist(sym, day) if x[0] >= pd and x[4]]
+    if not h: return {}
+    h.sort()      # 旧的在前
+    c = [x[4] for x in h]
+    r = {'d1': h[0][0], 'o1': h[0][1], 'c1': c[0], 'p': c[-1], 'dt': h[-1][0], 'nd': len(h),
+         'hi': round(max(x[2] for x in h), 3), 'lo': round(min(x[3] for x in h if x[3]), 3),
+         'v': int(h[-1][5]), 'dv': round(c[-1] * h[-1][5] / 1e4), 'cl': [round(x, 2) for x in c[-120:]]}
+    if len(c) > 1: r['c'] = round((c[-1] / c[-2] - 1) * 100, 2)
+    return r
+
+def _has_opt(sym):
+    j = nq_json(f'https://api.nasdaq.com/api/quote/{sym}/option-chain?assetclass=stocks&limit=1')
+    return 1 if int(_num(((j or {}).get('data') or {}).get('totalRecord'))) > 0 else 0
+
+def ipo_scan():
+    t0 = time.time()
+    today = datetime.date.today()
+    months = []
+    y, m = today.year, today.month + 1
+    if m > 12: y, m = y + 1, 1
+    for _ in range(10):      # 下个月 + 本月 + 往前 8 个月
+        months.append(f'{y}-{m:02d}')
+        m -= 1
+        if m == 0: y, m = y - 1, 12
+    pr, up, fi, wd = {}, {}, {}, {}
+    for k, ym in enumerate(months):
+        d = ((nq_json(f'https://api.nasdaq.com/api/ipo/calendar?date={ym}') or {}).get('data')) or {}
+        for r in ((d.get('priced') or {}).get('rows') or []):
+            if r.get('dealStatus') not in (None, 'Priced') or not r.get('proposedTickerSymbol'): continue
+            pr[r['dealID']] = r
+        for r in (((d.get('upcoming') or {}).get('upcomingTable') or {}).get('rows') or []):
+            up[r['dealID']] = r
+        if k <= 3:
+            for r in ((d.get('filed') or {}).get('rows') or []): fi[r['dealID']] = r
+            for r in ((d.get('withdrawn') or {}).get('rows') or []): wd[r['dealID']] = r
+        time.sleep(0.3)
+    if not (pr or up or fi):
+        print('IPO 日历一条都没取到，不更新', flush=True)
+        return
+    day = today.isoformat()
+    amt = lambda r: round(_num(r.get('dollarValueOfSharesOffered')) / 1e6, 1)
+    # 名字像空壳公司，或者是 10 美元发行、代码以 U 结尾的“单位”（股票加认股权证），都算 SPAC
+    spac = lambda r: 1 if SPAC.search(r.get('companyName') or '') or (_num(r.get('proposedSharePrice')) == 10 and re.fullmatch(r'[A-Z]{3,4}U', (r.get('proposedTickerSymbol') or '').strip())) else 0
+
+    P = []
+    for deal, r in pr.items():
+        P.append({'id': deal, 's': r['proposedTickerSymbol'].strip(), 'n': (r.get('companyName') or '').strip()[:60],
+                  'x': IPO_X.get(r.get('proposedExchange'), r.get('proposedExchange') or ''), 'pd': _mdy(r.get('pricedDate')),
+                  'ip': _num(r.get('proposedSharePrice')), 'sh': int(_num(r.get('sharesOffered'))), 'amt': amt(r), 'sp': spac(r)})
+    U = []
+    for deal, r in up.items():
+        ed = _mdy(r.get('expectedPriceDate'))
+        if ed and ed < (today - datetime.timedelta(days=3)).isoformat(): continue      # 过了预计日期还没定价的不留
+        if deal in pr: continue
+        pp = [_num(x) for x in re.findall(r'[\d.]+', str(r.get('proposedSharePrice') or ''))]
+        U.append({'id': deal, 's': (r.get('proposedTickerSymbol') or '').strip(), 'n': (r.get('companyName') or '').strip()[:60],
+                  'x': IPO_X.get(r.get('proposedExchange'), r.get('proposedExchange') or ''), 'ed': ed,
+                  'lo': min(pp) if pp else 0, 'hi': max(pp) if pp else 0, 'sh': int(_num(r.get('sharesOffered'))), 'amt': amt(r), 'sp': spac(r)})
+    F = [{'s': (r.get('proposedTickerSymbol') or '').strip(), 'n': (r.get('companyName') or '').strip()[:60], 'fd': _mdy(r.get('filedDate')),
+          'amt': amt(r), 'sp': spac(r)} for deal, r in fi.items() if deal not in pr and deal not in up]
+    W = [{'s': (r.get('proposedTickerSymbol') or '').strip(), 'n': (r.get('companyName') or '').strip()[:60], 'fd': _mdy(r.get('filedDate')),
+          'wd': _mdy(r.get('withdrawDate')), 'amt': amt(r)} for deal, r in wd.items()]
+
+    # 非 SPAC 的：抓发行详情（锁定期、简介等）和上市后的走势；近 120 天上市的再看有没有期权
+    def one(rec, kind):
+        rec.update(_ipo_over(rec['id']))
+        if kind == 'p':
+            rec.update(_ipo_perf(rec['s'], rec['ip'], rec['pd'], day))
+            if rec['pd'] >= (today - datetime.timedelta(days=120)).isoformat() and rec.get('p'): rec['op'] = _has_opt(rec['s'])
+    jobs = [(r, 'p') for r in P if not r['sp']] + [(r, 'u') for r in U if not r['sp']]
+    with ThreadPoolExecutor(6) as ex:
+        for f in as_completed([ex.submit(one, r, k) for r, k in jobs]):
+            try:
+                f.result()
+            except Exception:
+                pass
+    for r in P + U: r.pop('id', None)
+    P.sort(key=lambda r: r['pd'], reverse=True); U.sort(key=lambda r: r['ed'] or '9999')
+    F.sort(key=lambda r: r['fd'], reverse=True); W.sort(key=lambda r: r['wd'], reverse=True)
+    from collections import Counter
+    dd = Counter(r['dt'] for r in P if r.get('dt')).most_common(1)
+    out = {'t': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'd': dd[0][0] if dd else '',
+           'up': U, 'pr': P, 'fi': F, 'wd': W}
+    json.dump(out, open(os.path.join(DATA, 'ipo.json'), 'w'), separators=(',', ':'), ensure_ascii=False)
+    print(f'IPO：即将上市 {len(U)}，已上市 {len(P)}（{sum(1 for r in P if r.get("p"))} 只有行情，{sum(1 for r in P if r.get("op"))} 只有期权），'
+          f'已递交 {len(F)}，撤回 {len(W)}，用时 {time.time() - t0:.0f}s', flush=True)
+
 # ---------- 单只标的 ----------
 OPT = re.compile(r'^(.+?)(\d{6})([CP])(\d{8})$')
 
@@ -751,6 +876,9 @@ def main():
     if '--premarket' in sys.argv:    # 只抓盘前行情（--force 不看时间，测试用）
         premarket_scan('--force' in sys.argv, limit)
         return
+    if '--ipo-only' in sys.argv:    # 只更新新股 IPO 数据
+        ipo_scan()
+        return
     if '--profiles-only' in sys.argv:    # 只更新小盘股公司简介（用现有的 small.json 名单）
         small_profiles(list(json.load(open(os.path.join(DATA, 'small.json')))['s']))
         return
@@ -808,6 +936,10 @@ def main():
                 small_scan(today.isoformat(), earn)
             except Exception as e:
                 print('小盘池更新失败：', e, flush=True)
+            try:
+                ipo_scan()
+            except Exception as e:
+                print('IPO 数据更新失败：', e, flush=True)
         return
     ts = max((r['ts'] for r in res.values() if r.get('ts')), default=None)
     # 数据日 = 大多数标的最后一笔成交的日期（美东），不是 Cboe 文件生成时间（UTC）
@@ -861,6 +993,10 @@ def main():
             small_scan(day, earn)
         except Exception as e:      # 小盘池出问题不影响期权、新闻这些主要数据
             print('小盘池更新失败（不影响其他数据）：', e, flush=True)
+        try:
+            ipo_scan()
+        except Exception as e:
+            print('IPO 数据更新失败（不影响其他数据）：', e, flush=True)
     # --min N：成功少于 N 只就报错退出，不生成、不发布残缺的网页
     need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
     if len(res) < need:

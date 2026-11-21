@@ -217,6 +217,20 @@ h1 em{font-style:normal;color:var(--accent)}
 .smpmbar{margin:10px 0;padding:10px 14px;border-radius:12px;background:var(--warn-soft);color:var(--ink);display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline;font-size:13px;border-left:4px solid var(--warn)}.smpmbar b{color:var(--warn)}.smpmbar em{font-style:normal;color:var(--loss);font-weight:600}.smpmbar small{flex-basis:100%;color:var(--muted);font-size:12px}
 .smpm{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:2px 0 6px;font-size:13px}.smpm b{font-family:var(--f-mono);font-size:16px}.smpm i{font-style:normal;font-family:var(--f-mono);font-weight:700;font-size:12.5px;padding:2px 8px;border-radius:6px;color:var(--bg)}.smpm i.up{background:var(--gain)}.smpm i.dn{background:var(--loss)}.smpm span{color:var(--muted);font-size:12px}
 .smtab .dim{opacity:.45}
+/* 新股 IPO */
+.ipsum{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:4px 0 12px}
+.ipsum div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.ipsum b{font-family:var(--f-mono);font-size:20px}.ipsum span{font-size:12px;color:var(--muted)}
+.ipf{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));align-items:end}
+.ipchk{flex-direction:row;align-items:center;gap:6px;height:36px;font-size:13px;color:var(--ink);cursor:pointer}.ipchk input{width:16px;height:16px;accent-color:var(--accent)}
+.ipsec{margin:22px 0 8px;font-family:var(--f-display);font-size:19px}.ipsec small{margin-left:8px;font-size:12.5px;font-weight:400;color:var(--muted);font-family:inherit}
+.iptab{min-width:1060px}.iptab2{min-width:640px}.smtab .mu{color:var(--muted);font-size:12px}
+.smtab tr.nocl{cursor:default}.smtab tr.nocl:hover td{background:none}
+.ipempty{padding:22px 0;background:var(--surface);border:1px dashed var(--line);border-radius:12px}.ipempty b{font-size:16px}
+@media (max-width:560px){.ipsum{grid-template-columns:repeat(3,1fr);gap:6px}.ipsum div{padding:8px}.ipsum b{font-size:17px}.ipsum span{font-size:11px;line-height:1.35}}
+.ipd summary small{margin-left:8px;font-weight:400;color:var(--muted);font-size:12px}.ipd .tbl-wrap{margin-top:8px}
+.iptab td .ic-mini{display:block}
+.smtab td.num .up,.smtab td.num .dn{font-size:12px;margin-left:2px}
 .smcard .nm span{margin-left:8px;font-size:12px;font-weight:400;color:var(--muted)}.smcard .qrow{margin:2px 0}
 .smcard .desc[lang=en],#smdesc[lang=en]{color:var(--muted)}
 .smorig{margin-top:6px;font-size:12px;color:var(--muted)}.smorig summary{cursor:pointer}.smorig p{margin:6px 0 0;line-height:1.55}
@@ -649,6 +663,7 @@ footer{border-top:1px solid var(--line);padding-block:20px 28px;color:var(--mute
       <button role="tab" id="tab-indices" data-v="indices">指数</button>
       <button role="tab" id="tab-trade" data-v="trade">期权</button>
       <button role="tab" id="tab-small" data-v="small">小盘</button>
+      <button role="tab" id="tab-ipo" data-v="ipo">新股</button>
       <button role="tab" id="tab-watch" data-v="watch">自选</button>
       <button role="tab" id="tab-guide" data-v="guide">入门</button>
       <button role="tab" id="tab-audit" data-v="audit">核查记录</button>
@@ -887,7 +902,7 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---- 栏目 ---- */
-const VIEWS=['companies','etf','indices','trade','small','watch','guide','audit'];
+const VIEWS=['companies','etf','indices','trade','small','ipo','watch','guide','audit'];
 function moveInd(){const b=$('#tab-'+st.view),ind=$('#ind');ind.style.width=b.offsetWidth+'px';ind.style.transform=`translateX(${b.offsetLeft}px)`}
 const URLK=['idx','mc','tr','sort','ecat','eiss','esort','lk','liv','lsp','lpc','lmc','lunu','lern','lsort','wsort'];
 const DEF={};
@@ -975,7 +990,7 @@ function render(){
     $('#sort').value=st.sort;$('#side').scrollTop=sy;
     const more=$('#more');if(more&&'IntersectionObserver'in window){io=new IntersectionObserver(en=>{if(en[0].isIntersecting)showMore()},{rootMargin:'500px'});io.observe(more)}
   }else{if(sheetOpen)$('#scrim').classList.remove('on');
-    m.innerHTML=st.view==='etf'?etfHTML():st.view==='indices'?indicesHTML():st.view==='trade'?tradeHTML():st.view==='watch'?watchHTML():st.view==='small'?smallHTML():st.view==='guide'?GUIDE:AUDIT;if(st.view==='small')initSmall();if(st.view==='trade'){initTrade();tick()}}
+    m.innerHTML=st.view==='etf'?etfHTML():st.view==='indices'?indicesHTML():st.view==='trade'?tradeHTML():st.view==='watch'?watchHTML():st.view==='small'?smallHTML():st.view==='ipo'?ipoHTML():st.view==='guide'?GUIDE:AUDIT;if(st.view==='small')initSmall();if(st.view==='trade'){initTrade();tick()}}
 }
 function showMore(){const more=$('#more');if(!more)return;const from=st.shown;st.shown+=36;
   $('#rows').insertAdjacentHTML('beforeend',RES.slice(from,st.shown).map((i,n)=>st.mode==='table'?rowHTML(i):cardHTML(i,Math.min(n,14))).join(''));
@@ -1178,6 +1193,89 @@ $('#main').addEventListener('click',e=>{if(st.view!=='small'&&st.view!=='watch')
   if(b=T.closest('[data-sm]'))openSmall(b.dataset.sm)});
 $('#main').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('smfd'))st.sfo=e.target.open},true);
 $('#main').addEventListener('change',e=>{if(st.view!=='small')return;const t=e.target;if(t.dataset&&t.dataset.sf){st[t.dataset.sf]=t.value;st.sshown=60;render()}});
+/* ---- 新股 IPO：纳斯达克 IPO 日历（ipo.json，打开这个栏目才加载） ---- */
+const IP={ready:false,loading:false,err:false,t:'',d:'',up:[],pr:[],fi:[],wd:[]};
+Object.assign(st,{ipspac:'',ipsort:'',iprange:''});URLK.push('ipspac','ipsort','iprange');
+let IRES=[],ipCur='';
+function ipLoad(){if(IP.ready||IP.loading)return;IP.loading=true;
+  fetch('ipo.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{Object.assign(IP,j,{ready:true})}).catch(()=>{IP.err=true}).finally(()=>{IP.loading=false;if(st.view==='ipo')render()})}
+const ipAgo=n=>{const x=new Date(etToday+'T12:00:00Z');x.setUTCDate(x.getUTCDate()-n);return x.toISOString().slice(0,10)};
+const ipPct=(a,b)=>a&&b?(a/b-1)*100:null;
+const ipPc=v=>v==null?'<span class="mu">—</span>':`<span class="${v>=0?'up':'dn'}">${v>0?'+':''}${v.toFixed(1)}%</span>`;
+const ipAmt=v=>!v?'—':v>=100?`$${(v/100).toFixed(v>=1000?0:1)} 亿`:`$${Math.round(v*100)} 万`;
+const ipPx=v=>v?'$'+(v>=100?v.toFixed(1):v.toFixed(2)):'—';
+const ipQ=r=>{if(!st.q)return true;const q=String(st.q).toLowerCase();return (r.s||'').toLowerCase().includes(q)||(r.n||'').toLowerCase().includes(q)};
+const ipFind=s=>IP.pr.find(x=>x.s===s)||IP.up.find(x=>x.s===s);
+const ipDay=d=>{const n=dayDiff(etToday,d);return n===0?'今天':n===1?'明天':n===-1?'昨天':n>0?n+' 天后':-n+' 天前'};
+const IPS={d:['上市日期 新→旧',(a,b)=>a.pd<b.pd?1:-1],r:['较发行价 涨最多',(a,b)=>(ipPct(b.p,b.ip)??-1e9)-(ipPct(a.p,a.ip)??-1e9)],ra:['较发行价 跌最多',(a,b)=>(ipPct(a.p,a.ip)??1e9)-(ipPct(b.p,b.ip)??1e9)],
+  f:['首日涨幅 高→低',(a,b)=>(ipPct(b.c1,b.ip)??-1e9)-(ipPct(a.c1,a.ip)??-1e9)],a:['募资额 大→小',(a,b)=>b.amt-a.amt],dv:['成交额 高→低',(a,b)=>(b.dv||0)-(a.dv||0)]};
+function ipRow(r){const mc=r.p&&r.so?r.p*r.so/1e8:0,n=r.lk?dayDiff(etToday,r.lk):null;
+  const tags=[r.sp?'<span class="smtag info">SPAC</span>':'',r.op?'<span class="smtag up" title="已经可以交易期权">有期权</span>':'',n!=null&&n>=0&&n<=30?`<span class="smtag warn" title="锁定期 ${md(r.lk)} 到期">解禁 ${ipDay(r.lk)}</span>`:'',r.p&&r.ip&&r.p<r.ip?'<span class="smtag dn">破发</span>':''].join('');
+  return `<tr data-ip="${esc(r.s)}"><td class="nw"><div class="smc"><button class="lbtk" data-ip="${esc(r.s)}">${esc(r.s)}</button><span class="smn">${esc(r.n)}<small>${esc(r.x)} · ${md(r.pd)} 上市</small></span></div></td>
+  <td class="num">${ipPx(r.ip)}</td><td class="num">${r.o1?ipPx(r.o1)+' '+ipPc(ipPct(r.o1,r.ip)):'—'}</td><td class="num">${r.c1?ipPx(r.c1)+' '+ipPc(ipPct(r.c1,r.ip)):'—'}</td>
+  <td class="num"><b>${ipPx(r.p)}</b></td><td class="num">${ipPc(ipPct(r.p,r.ip))}</td><td class="num">${r.c!=null?ipPc(r.c):'—'}</td><td class="num">${r.dv?smDV(r.dv):'—'}</td><td class="num">${mc?fmtCap(mc):'—'}</td><td class="num">${ipAmt(r.amt)}</td>
+  <td><span class="ic-w ic-mini">${r.cl&&r.cl.length>1?smLine(r.cl,80,24):''}</span></td><td class="nw">${tags}</td></tr>`}
+function ipoHTML(){
+  if(!IP.ready){if(!IP.err)ipLoad();return `<div class="empty"><b>${IP.err?'新股数据暂时读不到':'正在读取新股数据…'}</b>${IP.err?'请用线上网址打开（直接双击本地文件读不到数据），或稍后再试。':''}</div>`}
+  const sp=st.ipspac==='1',ok=r=>(sp||!r.sp)&&ipQ(r),days=+(st.iprange||90),from=ipAgo(days),so=IPS[st.ipsort]?st.ipsort:'d';
+  const U=IP.up.filter(ok),R=IP.pr.filter(r=>ok(r)&&r.pd>=from).sort(IPS[so][1]);
+  const Lk=IP.pr.filter(r=>!r.sp&&ipQ(r)&&r.lk&&dayDiff(etToday,r.lk)>=-7&&dayDiff(etToday,r.lk)<=90).sort((a,b)=>a.lk<b.lk?-1:1);
+  const F=IP.fi.filter(ok),W=IP.wd.filter(ipQ),nsp=IP.fi.filter(r=>r.sp).length+IP.pr.filter(r=>r.sp&&r.pd>=from).length+IP.up.filter(r=>r.sp).length;
+  IRES=[...new Set([...U,...R,...Lk].map(r=>r.s).filter(Boolean))];
+  const live=R.filter(r=>r.ip&&r.c1),pop=live.length?live.reduce((s,r)=>s+ipPct(r.c1,r.ip),0)/live.length:null,brk=R.filter(r=>r.p&&r.ip&&r.p<r.ip).length,big=R.filter(r=>r.ip&&r.p&&ipPct(r.p,r.ip)>=50).length;
+  const sel=(k,label,opts,v)=>`<label class="smf"><span>${label}</span><select data-if="${k}">${opts.map(([x,l])=>`<option value="${x}"${v===x?' selected':''}>${l}</option>`).join('')}</select></label>`;
+  return `<div class="smhead"><h2>新股 IPO<small>纳斯达克 IPO 日历 · 美股全市场</small></h2>
+  <p>数据：纳斯达克 IPO 日历和发行资料，新股价格是美东 ${IP.d?md(IP.d):'—'} 收盘价。每天收盘后更新，盘前（北京时间晚上 9 点）再刷新一次日历。即将上市的日期是预计的，经常推迟或取消。SPAC（空壳收购公司，发行价几乎都是 10 美元，上市后再去找公司合并）默认不显示。不构成投资建议。</p></div>
+  <div class="ipsum"><div><b>${U.length}</b><span>即将上市</span></div><div><b>${R.length}</b><span>近 ${days} 天上市</span></div><div><b>${pop==null?'—':(pop>0?'+':'')+pop.toFixed(0)+'%'}</b><span>平均首日涨幅（收盘价对发行价）</span></div><div><b>${brk}</b><span>已跌破发行价</span></div><div><b>${big}</b><span>较发行价涨超 50%</span></div><div><b>${Lk.filter(r=>dayDiff(etToday,r.lk)>=0&&dayDiff(etToday,r.lk)<=30).length}</b><span>30 天内锁定期到期</span></div></div>
+  <div class="smfilters ipf">${sel('iprange','近期新股',[['30','近 30 天'],['90','近 90 天'],['180','近 180 天']],String(days))}${sel('ipsort','排序',Object.entries(IPS).map(([k,v])=>[k,v[0]]),so)}<label class="smf ipchk"><input type="checkbox" data-if="ipspac"${sp?' checked':''}><span>显示 SPAC（${nsp}）</span></label></div>
+
+  <h3 class="ipsec">即将上市<small>预计定价日期 · 通常当晚定价、第二天开盘交易</small></h3>
+  ${U.length?`<div class="tbl-wrap"><table class="smtab iptab2"><thead><tr><th>代码 / 公司</th><th>预计日期</th><th>交易所</th><th class="num">发行价（区间）</th><th class="num">发行股数</th><th class="num">募资额</th></tr></thead><tbody>${U.map(r=>`<tr data-ip="${esc(r.s)}"><td class="nw"><div class="smc"><button class="lbtk" data-ip="${esc(r.s)}">${esc(r.s||'—')}</button><span class="smn">${esc(r.n)}${r.sp?'<small>SPAC</small>':''}</span></div></td><td class="nw">${r.ed?`${md(r.ed)} ${wkd(r.ed)} <span class="mu">${ipDay(r.ed)}</span>`:'—'}</td><td>${esc(r.x)}</td><td class="num">${r.lo?(r.hi>r.lo?`$${r.lo}–${r.hi}`:'$'+r.lo):'—'}</td><td class="num">${r.sh?fmtN(r.sh):'—'}</td><td class="num">${ipAmt(r.amt)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty ipempty"><b>这几天没有排期的新股</b>纳斯达克一般提前 1–2 周挂出排期；节假日前后通常很少。下面“已递交申请”是排队中的公司。</div>'}
+
+  <h3 class="ipsec">近期新股表现<small>点一行看详情 · 涨跌幅都对比发行价</small></h3>
+  ${R.length?`<div class="tbl-wrap"><table class="smtab iptab"><thead><tr><th>代码 / 名称</th><th class="num">发行价</th><th class="num">首日开盘</th><th class="num">首日收盘</th><th class="num">现价</th><th class="num">较发行价</th><th class="num">最近一天</th><th class="num">日成交额</th><th class="num">市值</th><th class="num">募资额</th><th>上市后走势</th><th>提示</th></tr></thead><tbody>${R.map(ipRow).join('')}</tbody></table></div>`:'<div class="empty ipempty"><b>没有符合条件的新股</b>放宽时间范围，或清除搜索。</div>'}
+
+  <h3 class="ipsec">锁定期到期<small>未来 90 天 · 到期后老股东和员工可以卖股票</small></h3>
+  ${Lk.length?`<div class="tbl-wrap"><table class="smtab iptab2"><thead><tr><th>到期日</th><th>代码 / 名称</th><th class="num">上市日</th><th class="num">发行价</th><th class="num">现价</th><th class="num">较发行价</th><th class="num">发行股数</th><th class="num">总股本</th></tr></thead><tbody>${Lk.map(r=>{const n=dayDiff(etToday,r.lk);return `<tr data-ip="${esc(r.s)}"${n<0?' class="dim"':''}><td class="nw"><b>${md(r.lk)}</b> ${wkd(r.lk)} <span class="${n>=0&&n<=7?'hi':'mu'}">${ipDay(r.lk)}</span></td><td class="nw"><div class="smc"><button class="lbtk" data-ip="${esc(r.s)}">${esc(r.s)}</button><span class="smn">${esc(r.n)}</span></div></td><td class="num">${md(r.pd)}</td><td class="num">${ipPx(r.ip)}</td><td class="num">${ipPx(r.p)}</td><td class="num">${ipPc(ipPct(r.p,r.ip))}</td><td class="num">${r.sh?fmtN(r.sh):'—'}</td><td class="num">${r.so?fmtN(r.so):'—'}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty ipempty"><b>未来 90 天没有锁定期到期的新股</b></div>'}
+
+  <details class="smtips ipd"><summary>已递交上市申请（${F.length}）<small>最近 4 个月，排队中，还没定发行日期</small></summary>
+  ${F.length?`<div class="tbl-wrap"><table class="smtab iptab2"><thead><tr><th>递交日</th><th>拟用代码</th><th>公司</th><th class="num">拟募资</th></tr></thead><tbody>${F.map(r=>`<tr class="nocl"><td class="nw">${r.fd?md(r.fd):'—'}</td><td class="nw"><b>${esc(r.s||'—')}</b></td><td>${esc(r.n)}${r.sp?' <span class="smtag info">SPAC</span>':''}</td><td class="num">${ipAmt(r.amt)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="d-sm">没有。</p>'}</details>
+  <details class="smtips ipd"><summary>最近撤回上市申请（${W.length}）</summary>
+  ${W.length?`<div class="tbl-wrap"><table class="smtab iptab2"><thead><tr><th>撤回日</th><th>公司</th><th>递交日</th><th class="num">原拟募资</th></tr></thead><tbody>${W.map(r=>`<tr class="nocl"><td class="nw">${r.wd?md(r.wd):'—'}</td><td>${esc(r.n)}</td><td class="nw">${r.fd||'—'}</td><td class="num">${ipAmt(r.amt)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="d-sm">没有。</p>'}</details>
+  <details class="smtips"><summary>做新股之前要知道的</summary><ul><li><b>首日</b>：开盘价常常和发行价差很多，首日波动极大。散户一般拿不到发行价，只能在开盘后买。</li><li><b>期权</b>：新股上市后通常要过几个交易日才挂期权，刚挂出来时隐含波动率很高、买卖价差大。</li><li><b>静默期</b>：上市约 25 天后静默期结束，承销商的分析师会集中发布首次覆盖报告，股价常有波动。</li><li><b>锁定期</b>：一般 180 天。到期后老股东和员工可以卖股票，抛压可能让股价走弱；股价比发行价高得越多，卖的动力越大。</li><li><b>历史短</b>：没有经历过几次财报，没有可靠的技术位，止损要放宽、仓位要缩小。</li></ul></details>`}
+function initIpo(){}
+async function ipDescTr(root,r){const el=root.querySelector('#ipdesc');if(!el||!r.de)return;const k='i:'+r.s,done=z=>{if(el.isConnected&&ipCur===r.s){el.textContent=z;el.removeAttribute('lang');const o=root.querySelector('#iporig');if(o)o.hidden=false;const b=root.querySelector('#ipdbtn');if(b)b.hidden=true}};
+  if(DC[k]){done(DC[k]);return}const s=await trState();
+  if(s==='ready')dcAsk(k,r.de,done);
+  else if(s==='need'){const b=root.querySelector('#ipdbtn');if(b){b.hidden=false;b.onclick=async()=>{b.textContent='正在准备翻译…';try{await trCreate();dcAsk(k,r.de,done)}catch(e){b.textContent='翻译没有准备好，换成最新版 Chrome 或 Edge 试试'}}}}}
+function openIpo(s){const r=ipFind(s);if(!r)return;const d=$('#drawer');if(!d.classList.contains('on'))lastFocus=document.activeElement;
+  dmode='ipo';ipCur=s;cur=-1;const pos=IRES.indexOf(s),cell=(b,l)=>`<div><b>${b}</b><span>${l}</span></div>`,done=!!r.pd,mc=r.p&&r.so?r.p*r.so/1e8:0,y=encodeURIComponent(s);
+  const risk=[],nl=r.lk?dayDiff(etToday,r.lk):null,nq=r.qp?dayDiff(etToday,r.qp):null,f1=ipPct(r.c1,r.ip),now=ipPct(r.p,r.ip);
+  if(!done)risk.push('还没上市：日期和发行价都可能变，推迟、缩量、取消都很常见。');
+  if(done&&r.nd&&r.nd<=20)risk.push(`上市才 ${r.nd} 个交易日，没有经历过财报，走势和支撑位参考价值很低，波动会很大。`);
+  if(f1!=null&&f1>=30)risk.push(`首日收盘比发行价高 ${f1.toFixed(0)}%。首日大涨的新股，之后几周回落很常见。`);
+  if(now!=null&&now<0)risk.push(`现价已跌破发行价 ${(-now).toFixed(0)}%。`);
+  if(nq!=null&&nq>=-3&&nq<=14)risk.push(`静默期 ${md(r.qp)} 结束（${ipDay(r.qp)}），之后承销商的分析师会集中发布首次覆盖报告，股价常有波动。`);
+  if(nl!=null&&nl>=0&&nl<=45)risk.push(`锁定期 ${md(r.lk)} 到期（${ipDay(r.lk)}），之后老股东和员工可以卖股票${now!=null&&now>20?`；现价比发行价高 ${now.toFixed(0)}%，卖出的动力比较大`:''}。`);
+  if(done&&r.p&&!r.op)risk.push('目前还没有期权。新股一般上市几个交易日后才挂期权。');
+  if(r.dv&&r.dv<300)risk.push(`日成交额只有 ${smDV(r.dv)}，单子稍大就会推动价格。`);
+  if(r.sp)risk.push('这是 SPAC（空壳收购公司）：上市时没有实际业务，股价通常在 10 美元附近，要等宣布合并对象才会大幅波动。');
+  const cl=r.cl||[],hi=cl.length?Math.max(...cl):0,lo=cl.length?Math.min(...cl):0;
+  d.innerHTML=`<div class="d-handle" aria-hidden="true"></div><div class="d-bar"><button class="ib" id="d-prev" aria-label="上一只"${pos>0?'':' disabled'}>‹</button><button class="ib" id="d-next" aria-label="下一只"${pos>=0&&pos<IRES.length-1?'':' disabled'}>›</button><span class="sp1">${pos>=0?`${pos+1} / ${IRES.length}`:''}</span><button class="ib" id="d-x" aria-label="关闭">×</button></div>
+  <div class="d-body"><div class="d-tk">${esc(s)}<button class="copy" id="d-copy">复制代码</button></div><div class="d-nm" id="d-title">${esc(r.n)}</div><div class="d-en">${esc(r.x)}${done?` · ${md(r.pd)} ${wkd(r.pd)} 定价上市`:r.ed?` · 预计 ${md(r.ed)} ${wkd(r.ed)}`:''}</div>
+  <div class="d-row">${r.sp?'<span class="tg">SPAC</span>':''}${r.op?'<span class="tg">有期权</span>':''}${done?'<span class="tg">已上市</span>':'<span class="tg">即将上市</span>'}</div>
+  ${r.p?`<div class="smprice"><b>$${r.p.toFixed(2)}</b>${r.c!=null?`<i class="${r.c>=0?'up':'dn'}">${r.c>0?'+':''}${r.c.toFixed(2)}%</i>`:''}<span>美东 ${md(r.dt)} 收盘${now!=null?` · 较发行价 ${now>0?'+':''}${now.toFixed(1)}%`:''}</span></div>`:''}
+  ${nl!=null&&nl>=0&&nl<=30?`<div class="estrip${nl<=7?' hot':''} big"><b>锁定期 ${md(r.lk)} ${wkd(r.lk)} 到期</b><span>${ipDay(r.lk)}</span></div>`:''}
+  ${cl.length>1?`<div class="d-h">上市以来<small>收盘价 · 高 $${hi.toFixed(2)} · 低 $${lo.toFixed(2)}${r.ip?` · 发行价 $${r.ip}`:''}</small></div><div class="smchart">${smLine(cl,560,110)}</div>`:''}
+  <div class="d-h">发行和交易数据<small>纳斯达克</small></div><div class="obox">${done?cell(ipPx(r.ip),'发行价'):cell(r.lo?(r.hi>r.lo?`$${r.lo}–${r.hi}`:'$'+r.lo):'—','发行价（区间）')}${cell(ipAmt(r.amt),'募资额')}${cell(r.sh?fmtN(r.sh):'—','发行股数')}${r.so?cell(fmtN(r.so),'总股本'):''}${mc?cell(fmtCap(mc),'市值（现价 × 总股本）'):''}${r.o1?cell(ipPx(r.o1)+' '+ipPc(ipPct(r.o1,r.ip)),'首日开盘'):''}${r.c1?cell(ipPx(r.c1)+' '+ipPc(f1),'首日收盘'):''}${r.hi?cell('$'+r.hi,'上市以来最高'):''}${r.lo&&done?cell('$'+r.lo,'上市以来最低'):''}${r.dv?cell(smDV(r.dv),'最近一天成交额'):''}${r.qp?cell(md(r.qp)+' '+ipDay(r.qp),'静默期结束'):''}${r.lk?cell(md(r.lk)+' '+ipDay(r.lk),'锁定期到期'):''}${r.emp?cell(fmtN(r.emp),'员工'):''}${r.ceo?cell(esc(r.ceo),'CEO'):''}</div>
+  <div class="d-h">这家公司做什么<small>招股资料里的简介</small></div>${r.de?`<p class="d-desc" id="ipdesc" lang="en">${esc(r.de)}</p><button class="trbtn" id="ipdbtn" type="button" hidden>翻成中文</button><details class="smorig" id="iporig" hidden><summary>查看英文原文</summary><p lang="en">${esc(r.de)}</p></details>`:'<p class="d-sm">没有取到简介，可以点下面的链接去看招股书。</p>'}
+  ${risk.length?`<div class="d-h">要注意的</div><ul class="smrisk">${risk.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+  <div class="d-h">查资料</div><div class="d-links">${r.web?`<a href="${esc(r.web)}" target="_blank" rel="noopener">公司官网 ↗</a>`:''}${r.cik?`<a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${esc(r.cik)}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">SEC 公告（招股书）↗</a>`:''}${s?`<a href="https://www.nasdaq.com/market-activity/stocks/${s.toLowerCase()}" target="_blank" rel="noopener">纳斯达克 ↗</a><a href="https://finance.yahoo.com/quote/${y}" target="_blank" rel="noopener">雅虎财经 ↗</a>`:''}<a href="https://www.nasdaq.com/market-activity/ipos" target="_blank" rel="noopener">IPO 日历 ↗</a></div>
+  <p class="d-sm">数据来自纳斯达克 IPO 日历和收盘行情，不是实时的，不构成投资建议。</p></div>`;
+  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');ipDescTr(d,r);$('#d-x').focus({preventScroll:true})}
+function stepIpo(n){const p=IRES.indexOf(ipCur);if(p<0)return;const t=IRES[p+n];if(t!=null)openIpo(t)}
+$('#main').addEventListener('click',e=>{if(st.view!=='ipo')return;const b=e.target.closest('[data-ip]');if(b&&b.dataset.ip)openIpo(b.dataset.ip)});
+$('#main').addEventListener('change',e=>{if(st.view!=='ipo')return;const t=e.target;if(!(t.dataset&&t.dataset.if))return;st[t.dataset.if]=t.type==='checkbox'?(t.checked?'1':''):t.value;render()});
 /* 自选里的小盘股 */
 function smWatchHTML(list){return `<h2 class="smh2">自选小盘股<small>数据：美东 ${md(SM.d)} 收盘</small></h2><div class="tbl-wrap"><table class="smtab"><thead>${smTH()}</thead><tbody>${list.map(t=>SM.s[t]?smRow(t,SM.s[t]):`<tr><td class="nw">${starBtn(t)}<span class="lbtk">${esc(t)}</span></td><td colspan="${pmOn()?11:9}" class="mu">今天不在小盘池里（成交额不够、市值超过 20 亿，或股价低于 $2）</td></tr>`).join('')}</tbody></table></div>`}
 function watchHTML(){const extra=[...favs].filter(t=>!CI.has(t)&&!ETFSET.has(t)),hasMain=[...favs].some(t=>CI.has(t)||ETFSET.has(t));
@@ -1329,12 +1427,12 @@ function openDrawer(i){dmode='';const c=C[i],d=$('#drawer');if(!d.classList.cont
   d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');trNews(d);
   if(hot)hot.classList.remove('hot');hot=tiles[i]||null;if(hot)hot.classList.add('hot');
   $('#d-x').focus({preventScroll:true})}
-function stepDrawer(n){if(dmode==='small')return stepSmall(n);const p=RES.indexOf(cur);if(p<0)return;const t=RES[p+n];if(t!=null)openDrawer(t)}
+function stepDrawer(n){if(dmode==='small')return stepSmall(n);if(dmode==='ipo')return stepIpo(n);const p=RES.indexOf(cur);if(p<0)return;const t=RES[p+n];if(t!=null)openDrawer(t)}
 function closeDrawer(){dmode='';$('#drawer').classList.remove('on');if(!($('#side')&&$('#side').classList.contains('on')))$('#scrim').classList.remove('on');if(hot){hot.classList.remove('hot');hot=null}cur=-1;if(lastFocus&&document.body.contains(lastFocus))lastFocus.focus({preventScroll:true})}
 $('#drawer').addEventListener('click',e=>{const T=e.target;let b;
   if(T.closest('#d-x'))closeDrawer();else if(T.closest('#d-prev'))stepDrawer(-1);else if(T.closest('#d-next'))stepDrawer(1);
   else if(b=T.closest('[data-fav]')){const t=b.dataset.fav;favToggle(t);b.setAttribute('aria-pressed',favs.has(t));const k=cur;render();cur=k}
-  else if(T.closest('#d-copy')){const t=dmode==='small'?smCur:C[cur][0],bad=()=>toast('复制失败，请手动选中代码');try{navigator.clipboard.writeText(t).then(()=>toast(`已复制 ${t}`),bad)}catch(x){bad()}}
+  else if(T.closest('#d-copy')){const t=dmode==='small'?smCur:dmode==='ipo'?ipCur:C[cur][0],bad=()=>toast('复制失败，请手动选中代码');try{navigator.clipboard.writeText(t).then(()=>toast(`已复制 ${t}`),bad)}catch(x){bad()}}
   else if(b=T.closest('[data-theme]')){closeDrawer();clearAll();st.theme=+b.dataset.theme;setView('companies')}
   else if(b=T.closest('[data-etf]')){closeDrawer();goETF(b.dataset.etf)}
   else if(b=T.closest('[data-i]'))openDrawer(+b.dataset.i)});
