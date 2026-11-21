@@ -659,6 +659,12 @@ def ipo_scan():
         if kind == 'p':
             rec.update(_ipo_perf(rec['s'], rec['ip'], rec['pd'], day))
             if rec.get('p'): rec['op'] = _has_opt(rec['s'])
+            # 市值 100 亿美元以上的新股，网页会自动并进“公司”栏目，需要行业分类
+            if rec.get('p') and rec.get('so') and rec['p'] * rec['so'] >= 1e10:
+                pf = ((nq_json(f"https://api.nasdaq.com/api/company/{rec['s']}/company-profile") or {}).get('data')) or {}
+                for k, f in (('sec', 'Sector'), ('ind', 'Industry')):
+                    v = (pf.get(f) or {}).get('value')
+                    if v: rec[k] = v
     jobs = [(r, 'p') for r in P if not r['sp']] + [(r, 'u') for r in U if not r['sp']]
     with ThreadPoolExecutor(6) as ex:
         for f in as_completed([ex.submit(one, r, k) for r, k in jobs]):

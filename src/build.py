@@ -20,6 +20,30 @@ by['VZ'][9]+='2026 年 6 月被 Alphabet 取代，退出道琼斯30。'
 by['MSTR'][10]='公司已更名为 Strategy，代码仍为 MSTR'
 spcx=['SPCX','SpaceX','Space Exploration Technologies','','','✓','','工业','航天与卫星互联网','马斯克创办的航天公司：猎鹰 9 号可回收火箭占全球商业发射的大部分，星链 Starlink 卫星互联网是主要收入来源，正在研发重型火箭星舰 Starship，2026 年初并入 xAI。2026 年 6 月在纳斯达克上市，7 月按新股快速纳入规则进入 NASDAQ-100。','2026 年 6 月上市']
 i=rows.index(by['RKLB']) ; rows.insert(i,spcx); flags['SPCX']=2
+
+# ---------- 2026-11-21 起的规则：市值 100 亿美元以上的新股（不含 SPAC），自动并进“公司”栏目 ----------
+# 行业按纳斯达克的分类换算；下面 BIG_CN 里写了中文名和介绍的用中文，没写的先用自动生成的简介（之后补写）。
+SEC_MAP={'Technology':'信息技术','Finance':'金融','Health Care':'医疗保健','Consumer Discretionary':'可选消费','Industrials':'工业','Energy':'能源','Real Estate':'房地产',
+         'Basic Materials':'材料','Consumer Staples':'必需消费','Utilities':'公用事业','Telecommunications':'通信服务','Miscellaneous':'工业'}
+BIG_CN={
+ 'ANT':['Anthropic','信息技术','AI 大模型','开发 Claude 系列 AI 大模型的公司，收入来自企业和开发者调用模型的 API，以及 Claude 的个人和团队订阅（包括编程工具 Claude Code）。是 OpenAI 的主要竞争对手之一。'],
+ 'SKHY':['SK 海力士','信息技术','存储芯片（DRAM、HBM、NAND）','韩国存储芯片巨头。DRAM 内存收入全球第二；AI 芯片用的高带宽内存 HBM 全球第一（2026 年一季度份额约 56%，来自公司招股书引用的 IDC 数据），是英伟达 AI 芯片的核心供应商；NAND 闪存也是全球前二。'],
+ 'BSP':['Bending Spoons','信息技术','收购并改造软件产品','意大利科技公司，专门收购成熟的互联网和软件产品，大幅精简改造后提高利润，再用赚的钱继续收购。旗下有 Evernote、WeTransfer 等产品。'],
+ 'PS':['潘兴广场','金融','另类资产管理','比尔·阿克曼（Bill Ackman）的投资管理公司，管理的大多是“永久资本”（投资人不能随时赎回），集中长期持有少数公司。收入来自管理费和业绩提成。'],
+}
+try: _ipo_all=json.load(open('data/ipo.json')).get('pr') or []
+except Exception: _ipo_all=[]
+_have={r[0] for r in rows}
+for r in _ipo_all:
+    s=r.get('s')
+    if r.get('sp') or not s or s in _have or not (r.get('p') and r.get('so') and r['p']*r['so']>=1e10): continue
+    cn=BIG_CN.get(s)
+    pd=r['pd']; ym=f"{int(pd[:4])} 年 {int(pd[5:7])} 月"
+    auto=f"{ym} {int(pd[8:])} 日在{r.get('x') or '美股'}上市的新股，发行价 ${r.get('ip') or 0:g}，募资约 {round(r.get('amt',0)/100) if r.get('amt',0)>=100 else r.get('amt',0)}{' 亿' if r.get('amt',0)>=100 else ' 百万'}美元。"
+    sec=cn[1] if cn else SEC_MAP.get(r.get('sec',''),'工业')
+    rows.append([s,cn[0] if cn else r['n'],r['n'],'','','','',sec,cn[2] if cn else (r.get('ind') or '新股'),(cn[3]+' ' if cn else '')+auto,f'{ym}上市的新股，点“新股”栏目看发行和解禁信息'])
+    flags[s]=0; _have.add(s)
+    print('新股并入公司：',s)
 C=[[r[0],r[1],r[2],flags[r[0]],SECT.index(r[7]),r[8],r[9],r[10] or ''] for r in rows]
 from collections import Counter
 print('total',len(C),'sp',sum(1 for c in C if c[3]&1),'ndx',sum(1 for c in C if c[3]&2),'dow',sum(1 for c in C if c[3]&4),'none',sum(1 for c in C if not c[3]))
@@ -61,6 +85,8 @@ print('options rows',len(O),'date',OD,'ts',OTS)
 try: _mc_file=json.load(open('data/mcap.json'))['data']
 except Exception: _mc_file={}
 MC=dict(_mc_file); MC.update(L.get('mcap') or {})
+for r in _ipo_all:     # 新股没取到市值的，用 现价 × 总股本
+    if r.get('s') and not MC.get(r['s']) and r.get('p') and r.get('so'): MC[r['s']]=round(r['p']*r['so']/1e8,1)
 for c in C: c.append(MC.get(c[0]))
 print('mcap',sum(1 for c in C if c[8]),'of',len(C),'source',L.get('mcap_source') or 'data/mcap.json')
 # ---------- 补齐全部有期权的 ETF ----------
