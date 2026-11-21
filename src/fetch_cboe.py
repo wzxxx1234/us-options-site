@@ -653,12 +653,12 @@ def ipo_scan():
     W = [{'s': (r.get('proposedTickerSymbol') or '').strip(), 'n': (r.get('companyName') or '').strip()[:60], 'fd': _mdy(r.get('filedDate')),
           'wd': _mdy(r.get('withdrawDate')), 'amt': amt(r)} for deal, r in wd.items()]
 
-    # 非 SPAC 的：抓发行详情（锁定期、简介等）和上市后的走势；近 120 天上市的再看有没有期权
+    # 非 SPAC 的：抓发行详情（锁定期、简介等）和上市后的走势，再看有没有期权
     def one(rec, kind):
         rec.update(_ipo_over(rec['id']))
         if kind == 'p':
             rec.update(_ipo_perf(rec['s'], rec['ip'], rec['pd'], day))
-            if rec['pd'] >= (today - datetime.timedelta(days=120)).isoformat() and rec.get('p'): rec['op'] = _has_opt(rec['s'])
+            if rec.get('p'): rec['op'] = _has_opt(rec['s'])
     jobs = [(r, 'p') for r in P if not r['sp']] + [(r, 'u') for r in U if not r['sp']]
     with ThreadPoolExecutor(6) as ex:
         for f in as_completed([ex.submit(one, r, k) for r, k in jobs]):
@@ -889,6 +889,13 @@ def main():
     site = json.load(open(os.path.join(DATA, 'data.json')))
     # 已退市、网站上已经去掉的公司不抓（和 build.py 保持一致）
     stocks = sorted(({r[0] for r in site['全部公司'][1:]} | {'SPCX'}) - {'EA', 'WBD', 'KVUE'})
+    # 有期权的新股（上一次 IPO 数据里标了“有期权”的，SPAC 不算）也一起抓，网页上自动出现在期权排行的“个股”里
+    try:
+        ipo_new = sorted({r['s'] for r in json.load(open(os.path.join(DATA, 'ipo.json')))['pr'] if r.get('op') and not r.get('sp')} - set(stocks))
+    except Exception:
+        ipo_new = []
+    if ipo_new: print(f'有期权的新股 {len(ipo_new)} 只：{" ".join(ipo_new)}', flush=True)
+    stocks = sorted(set(stocks) | set(ipo_new))
     extra = json.load(open(os.path.join(DATA, 'etf_extra.json')))
     # 杠杆和反向 ETF 不要（类别是杠杆与反向，或跟踪说明里带“倍”）
     lev = lambda r: r[2].startswith('杠杆') or '倍' in r[3]
