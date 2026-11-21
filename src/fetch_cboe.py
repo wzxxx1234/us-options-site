@@ -778,15 +778,20 @@ def nasdaq_chain_json(sym, today, kind):
         k = _num(r['strike'])
         if k <= 0: continue
         for cp, pre in (('C', 'c_'), ('P', 'p_')):
-            bid, ask = _num(r.get(pre + 'Bid')), _num(r.get(pre + 'Ask'))
+            bid, ask, lp = _num(r.get(pre + 'Bid')), _num(r.get(pre + 'Ask')), _num(r.get(pre + 'Last'))
+            # 收盘后纳斯达克的买卖报价常常是乱的（差得很远、甚至买价高于卖价），用来算中间价会把 IV 和预期波动算高。
+            # 报价正常（买价 > 0、卖价 ≥ 买价、价差不超过中间价的 25%）才用中间价，否则用当天最后成交价
+            if not (bid > 0 and ask >= bid and (ask - bid) / ((ask + bid) / 2) <= 0.25):
+                bid = ask = lp if lp > 0 else 0
             opts.append({'option': f"{root}{cur:%y%m%d}{cp}{int(round(k * 1000)):08d}", 'volume': _num(r.get(pre + 'Volume')),
                          'open_interest': _num(r.get(pre + 'Openinterest')), 'bid': bid, 'ask': ask})
             by.setdefault(cur, {}).setdefault(k, {})[cp] = (bid, ask)
     h = _nq_closes(sym, cls, today)
     if len(h) < 2 or not h[1][1]: raise nodata('取不到收盘价')
     px = h[0][1]
+    dd = datetime.date.fromisoformat(h[0][0])      # 到期天数从数据那天（最近一个收盘日）算起，周末跑也不会把 IV 算高
     return {'timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), '_src': 'nq',
-            'data': {'current_price': px, 'price_change_percent': (px / h[1][1] - 1) * 100, 'iv30': est_iv30(by, px, today), 'iv30_change': 0,
+            'data': {'current_price': px, 'price_change_percent': (px / h[1][1] - 1) * 100, 'iv30': est_iv30(by, px, dd), 'iv30_change': 0,
                      'last_trade_time': h[0][0] + 'T16:00:00', 'options': opts}}
 
 def chain_json(sym, today, kind):
@@ -842,7 +847,7 @@ def summarize(sym, today, name, earn=None, kind=0):
     for x in dates:
         if (x - today).days < 5: continue
         legs = [l for l in exps[key(x)] if l[1] == 'C' and l[2] > 0 and l[3] > 0]
-        if px and legs:
+        if px and legs and j.get('_src') != 'nq':      # 纳斯达克备用数据收盘后的报价不可靠，不算价差
             k, cp, b, a = min(legs, key=lambda l: abs(l[0] - px))[:4]
             spread = round((a - b) / ((a + b) / 2) * 100, 1)
         em = straddle(x)
