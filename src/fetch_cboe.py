@@ -197,6 +197,18 @@ def translate(titles, old=None, budget=4800):
 NQ = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124 Safari/537.36',
       'Accept': 'application/json'}
 
+def _yahoo_bars(sym, day):
+    """雅虎财经的 5 分钟线（纳斯达克取不到分时时的备用），返回 [(美东分钟数, 价格)]。"""
+    q = urllib.parse.quote(sym.replace('.', '-'), safe='')
+    j = json.loads(get(f'https://query1.finance.yahoo.com/v8/finance/chart/{q}?interval=5m&range=5d', tries=3, timeout=30))
+    r = j['chart']['result'][0]
+    off = r['meta'].get('gmtoffset', -18000)
+    out = []
+    for ts, c in zip(r.get('timestamp') or [], r['indicators']['quote'][0].get('close') or []):
+        t = datetime.datetime.fromtimestamp(ts + off, datetime.timezone.utc)
+        if c and t.date().isoformat() == day: out.append((t.hour * 60 + t.minute, c))
+    return out
+
 def _bars(sym, kind, day):
     """返回 [(美东分钟数, 价格)] 和昨收（取不到就是 None）。"""
     if kind == 2 or '.' in sym:   # 指数；以及纳斯达克查不到的 BRK.B 这类带点的代码（Cboe 的可能不是当天的，日期不对就不画）
@@ -204,15 +216,18 @@ def _bars(sym, kind, day):
         return [(int(b['datetime'][11:13]) * 60 + int(b['datetime'][14:16]), (b.get('price') or {}).get('close'))
                 for b in j.get('data', []) if b.get('datetime', '')[:10] == day], None
     q = urllib.parse.quote(sym.replace('.', '/'), safe='')
+    d = {}
     for k in range(3):
         try:
             with urllib.request.urlopen(urllib.request.Request(
                     f'https://api.nasdaq.com/api/quote/{q}/chart?assetclass={"etf" if kind == 1 else "stocks"}', headers=NQ), timeout=30) as r:
-                j = json.loads(r.read()); break
+                d = json.loads(r.read()).get('data') or {}
+            if d.get('chart'): break
         except Exception:
-            if k == 2: raise
-            time.sleep(3 * (k + 1))
-    d = j.get('data') or {}
+            pass
+        time.sleep(3 * (k + 1))     # 纳斯达克偶尔对一批股票一直返回“Error while calling vendor”（没有数据），隔几秒再试
+    if not d.get('chart'):
+        return _yahoo_bars(sym, day), None      # 纳斯达克取不到就用雅虎的 5 分钟线（昨收由调用的地方用涨跌幅算）
     out = []
     for b in d.get('chart') or []:
         t = datetime.datetime.fromtimestamp(b['x'] / 1000, datetime.timezone.utc)   # 纳斯达克的时间戳是“美东钟点当成 UTC”
