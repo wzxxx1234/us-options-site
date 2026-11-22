@@ -287,6 +287,21 @@ def intraday_index(src, sym, day):
         return None
     return _pack(bars, prev, None)
 
+# 指数的当天走势：Cboe 拒绝访问后改用雅虎财经的指数行情（网页上的指数代码: 雅虎代码）。
+# 美元指数雅虎没有分时，标普中盘 400 的昨收不可靠，这两个仍用 ETF 代替。
+YIDX = {'SPX': '^GSPC', 'NDX': '^NDX', 'DJI': '^DJI', 'IXIC': '^IXIC', 'RUT': '^RUT', 'RUI': '^RUI', 'RUA': '^RUA', 'OEX': '^OEX',
+        'SML': '^SP600', 'DJT': '^DJT', 'DJU': '^DJU', 'SOX': '^SOX', 'BKX': '^BKX', 'HXC': '^HXC', 'VIX': '^VIX', 'TNX / US10Y': '^TNX'}
+
+def _yahoo_index(ysym, day):
+    j = json.loads(get(f'https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ysym)}?interval=5m&range=1d', tries=3, timeout=30))
+    r = j['chart']['result'][0]
+    m = r['meta']; off = m.get('gmtoffset', -18000)
+    bars = []
+    for ts, c in zip(r.get('timestamp') or [], r['indicators']['quote'][0].get('close') or []):
+        tt = datetime.datetime.fromtimestamp(ts + off, datetime.timezone.utc)
+        if c and tt.date().isoformat() == day: bars.append((tt.hour * 60 + tt.minute, c))
+    return _pack(bars, m.get('chartPreviousClose'), None)
+
 def intraday(res, day):
     out, t0, fails = {}, time.time(), []
     with ThreadPoolExecutor(6) as ex:
@@ -307,6 +322,14 @@ def intraday(res, day):
         except Exception:
             fails.append(k)
         time.sleep(0.5)
+    for k, y in YIDX.items():
+        if k in out: continue
+        try:
+            v = _yahoo_index(y, day)
+            if v: out[k] = v; fails = [x for x in fails if x != k]
+        except Exception:
+            fails.append(k)
+        time.sleep(0.3)
     if fails: print(f'分时取不到 {len(fails)} 只：{" ".join(sorted(fails)[:40])}', flush=True)
     json.dump({'d': day, 's': out}, open(os.path.join(DATA, 'intraday.json'), 'w'), separators=(',', ':'))  # noqa: SIM115
     print(f'分时走势 {len(out)} 只，用时 {time.time() - t0:.0f}s', flush=True)
