@@ -1207,7 +1207,7 @@ const unuBadge=t=>isUnu(O[t])?`<span class="ub" data-tip="${esc(GLOSS['异动'])
 const earnBadge=t=>{const e=earnOf(t);if(!e)return'';const n=dayDiff(etToday,e[0]);if(n<0||n>28)return'';return `<span class="eb${n<=7?' soon':''}" data-tip="财报日，来自纳斯达克财报日历。财报前隐含波动率通常偏高，公布后大幅回落">财报 ${earnTxt(e)}</span>`};
 const emTxt=e=>e?`±${e[2]}%（±$${e[1]}，到 ${md(e[0])}）`:'—';
 const mcBadge=c=>{const t=mcTier(c[8]);return t?`<span class="mcb mc-${t[0]}">${t[1]} · ${fmtCap(c[8])}</span>`:''};
-const OD=DATA.OD||{date:'',ts:''};const OSRC=OD.est?'纳斯达克':'Cboe',OSRC2=OD.est?'纳斯达克期权链':'Cboe 延时数据';const ODATE=OD.date?(+OD.date.slice(5,7))+' 月 '+(+OD.date.slice(8))+' 日':'';const ECUR=new Set(DATA.EC||[]);
+const OD=DATA.OD||{date:'',ts:''};const OSRC=OD.est?'OCC + 纳斯达克':'Cboe',OSRC2=OD.est?'OCC + 纳斯达克期权链':'Cboe 延时数据';const ODATE=OD.date?(+OD.date.slice(5,7))+' 月 '+(+OD.date.slice(8))+' 日':'';const ECUR=new Set(DATA.EC||[]);
 const CI=new Map(C.map((c,i)=>[c[0],i]));
 const fmtN=n=>n>=1e8?(n/1e8).toFixed(1)+'亿':n>=1e4?(n/1e4).toFixed(n>=1e6?0:1)+'万':String(n);
 const OR=[['20','成交前 20',o=>o[9]>0&&o[9]<=20],['50','成交前 50',o=>o[9]>0&&o[9]<=50],['100','成交前 100',o=>o[9]>0&&o[9]<=100],['all','当天有成交',o=>o[0]>0]];
@@ -1291,7 +1291,7 @@ $('#stats').innerHTML=[[C.length,'公司 / 股票','家',0],[cnt(IDX[1][2]),'标
 /* ---- 期权数据日期 ---- */
 (()=>{const el=$('#datastamp');if(!el||!OD.date)return;let today='';try{today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date())}catch(e){}
   const age=today?Math.round((Date.parse(today)-Date.parse(OD.date))/864e5):0;
-  el.innerHTML=`<i></i>期权数据：美东 ${ODATE}${OD.ts?' '+OD.ts.slice(11,16):''} · 来自 ${OD.est?'纳斯达克期权链（IV30 为估算）':'Cboe'}，每个交易日收盘后自动更新${age>4?`<b>已经 ${age} 天没有新数据，自动更新可能出了问题</b>`:''}`;
+  el.innerHTML=`<i></i>期权数据：美东 ${ODATE}${OD.ts?' '+OD.ts.slice(11,16):''} · 来自 ${OD.est?'备用数据（OCC 成交量和未平仓 + 纳斯达克期权链，IV30 为估算）':'Cboe'}，每个交易日收盘后自动更新${age>4?`<b>已经 ${age} 天没有新数据，自动更新可能出了问题</b>`:''}`;
   if(age>4)el.classList.add('old')})();
 /* ---- 点阵 ---- */
 /* 正方化树图：方块面积按市值，先按行业分块 */
@@ -1961,7 +1961,7 @@ function ichart(t,w,h,up){const v=t&&INTRA&&INTRA.s[t];if(!v)return'';const a=v[
 const f2=x=>x>=1000?x.toFixed(1):x.toFixed(2);
 /* 指数卡片：有指数期权的用期权数据里的价格；没有的用单独取的指数走势；再没有就用跟踪它的 ETF 代替 */
 const IXP={RUI:'IWB',RUA:'IWV',MID:'MDY',SML:'IJR',DJU:'XLU',HXC:'KWEB',DXY:'UUP'};
-function ixq(code){const op=(IXO[code]||[]).find(t=>O[t]);if(op)return qrow(op,1);
+function ixq(code){const op=(IXO[code]||[]).find(t=>O[t]);if(op&&(!INTRA||INTRA.s[op]||!INTRA.s[code]))return qrow(op,1);
   if(!INTRA)return INTRAERR?'':`<div data-ixq="${esc(code)}"></div>`;
   if(INTRA.s[code])return qrowI(code,'');const p=IXP[code];return p&&INTRA.s[p]?qrowI(p,`走势和价格用 ETF ${p} 代替`):''}
 function qrowI(k,note){const [pc,a]=INTRA.s[k],x=a[a.length-1],px=pc*(1+x/1e4),etf=!!note;
@@ -2245,7 +2245,7 @@ function dataAlert(){const el=$('#dalert');if(!el||!OD.date)return;
   const exp=lastSessionBefore(etToday),msgs=[];
   if(OD.date<exp)msgs.push(['bad',`期权数据还停在美东 ${ODATE}，最近一个交易日（${md(exp)} ${wkd(exp)}）的自动更新没有成功，网站上的数据是旧的。${link}`]);
   else{
-    if(OD.est)msgs.push(['info','期权数据现在来自纳斯达克的期权链（Cboe 暂时拒绝了自动更新的访问）：成交量、未平仓是真实的；IV30 和预期波动是用平值期权的价格估算的，和券商里的数值会有差别；收盘后的买卖报价不可靠，买卖价差暂时不显示；SPX、VIX 这类指数期权暂时没有。']);
+    if(OD.est)msgs.push(['info',`Cboe 暂时拒绝了自动更新的访问，期权数据改用备用来源：成交量和未平仓来自 OCC（美国期权清算公司）的官方数据${OD.occp?'（这次 OCC 还没公布当天成交量，暂用纳斯达克的，数字偏少，公布后自动补上）':''}；期权报价来自纳斯达克，IV30 和预期波动是估算的，和券商里的数值会有差别；指数期权的 IV30 用 Cboe 的波动率指数（VIX、VXN、VXD），罗素 2000 暂时没有；收盘后的买卖报价不可靠，买卖价差暂时不显示。Cboe 恢复后自动换回。`]);
     if((OD.n||0)<700)msgs.push(['warn',`这次只抓到 ${OD.n} 只标的（正常 730 只左右），部分数据缺失。${link}`]);
     if(!vals.some(o=>o[17]))msgs.push(['info','预期波动、财报日、Call/Put 墙、最大痛点和期权异动要等下一次完整的自动更新后才有数据（每个交易日美股收盘后，北京时间早上 5:45 开始）。']);
     else if(!vals.some(o=>o[16]))msgs.push(['warn',`这次没有取到纳斯达克的财报日历，财报日期和“7 天内的财报”暂时是空的。${link}`]);
@@ -2462,7 +2462,7 @@ const AUDIT=`<div class="prose">
 <h2>核查记录<small>2026-11-12</small></h2>
 <p class="txt">原表格里的三份成分股名单逐只对照了维基百科当前列表，有出入的地方再用纳斯达克、标普道琼斯指数的公告和新闻报道交叉确认。下面是改了什么、没改什么。</p>
 <div class="fix"><h3>小盘正股数据来源</h3><p>“小盘”栏目里的名单来自纳斯达克公开的全市场股票列表：市值 0.3 到 20 亿美元、股价不低于 2 美元、成交额不低于 500 万美元（已排除 SPAC 空壳公司、权证和优先股）。价格、涨跌、成交量和 52 周高低都用纳斯达克的日线重新算（筛选器列表有时停在前一天，不能直接用）。做空占比用纳斯达克公布的最近一期做空持仓除以总股本（总股本按市值÷股价估算，不是流通股；这个数据每两周才公布一次），卖空成交占比来自 FINRA 每天公布的卖空成交量文件，新闻来自雅虎财经。盘前行情来自纳斯达克的盘前成交数据，每个交易日开盘前抓一次（美东 8:00 左右），涨跌幅按我们自己的昨收价算（纳斯达克自己的昨收有时落后一天）。所有数据都是快照，不是实时行情。</p></div>
-<div class="fix"><h3>期权数据来源 <span class="tag">${ODATE}</span></h3><p>期权成交量、未平仓量、P/C、IV30、平值买卖价差和 7 天内到期日数，${OD.est?`现在是脚本从纳斯达克网站公开的期权链逐只抓下来算的（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）：2026 年 11 月起 Cboe 的延时行情接口拒绝了自动更新的访问，所以改用纳斯达克。成交量、未平仓量是真实的；纳斯达克不提供隐含波动率，IV30 是用平值期权的价格估算的，和券商里的数值会有差别；收盘后的买卖报价不可靠，买卖价差暂时不显示；SPX、VIX 这类指数期权纳斯达克没有，暂时缺。Cboe 恢复访问后会自动换回 Cboe 的数据。`:`都是脚本从 Cboe 网站公开的延时行情接口逐只抓期权链算出来的（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）。范围是本站的公司、ETF 和指数期权（SPX、XSP、NDX、XND、RUT、MRUT、DJX、OEX、VIX）。这个接口 Cboe 没有正式说明，冷门标的的数据可能比整体晚一天，页面上会标“数据日”。`}ETF 列表在原来的基础上，补了 Macroption 统计的 2026 年 ETF 期权日均成交前 100 名里网站原来没有的 10 只行业、主题、商品和加密 ETF（MAGS、SILJ、AMLP、MSOS、ASHR、BNO、WEAT、GBTC、EETH、XRPC），这 10 只的中文说明是我写的，没有逐条核对。杠杆和反向类 ETF 一律不收，网站原有的 23 只（TQQQ、SQQQ、SOXL、SOXS、NVDL、TSLL、UVXY、SVXY 等）也按你的要求删掉了。</p></div>
+<div class="fix"><h3>期权数据来源 <span class="tag">${ODATE}</span></h3><p>期权成交量、未平仓量、P/C、IV30、平值买卖价差和 7 天内到期日数，${OD.est?`2026 年 11 月起 Cboe 的延时行情接口拒绝了自动更新的访问，现在用备用来源（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）：成交量和未平仓用 OCC（美国期权清算公司）公布的官方数据，和 Cboe 时期的数字核对过基本一致；期权报价来自纳斯达克的期权链（纳斯达克自己的成交量和未平仓明显偏少，不用）；纳斯达克不提供隐含波动率，IV30 用平值期权的价格估算；SPX、NDX、RUT、VIX 这类指数期权纳斯达克没有，用 OCC 的成交和未平仓加雅虎财经的收盘价，IV30 用 Cboe 的波动率指数（VIX、VXN、VXD、VVIX），罗素 2000 没有对应的数据；收盘后的买卖报价不可靠，买卖价差暂时不显示。所有来源都取不到的标的沿用上一次的数据，页面上会标出数据停在哪天。Cboe 恢复访问后自动换回 Cboe 的数据。`:`都是脚本从 Cboe 网站公开的延时行情接口逐只抓期权链算出来的（数据时间 ${OD.ts?OD.ts.slice(0,16):''}）。范围是本站的公司、ETF 和指数期权（SPX、XSP、NDX、XND、RUT、MRUT、DJX、OEX、VIX）。这个接口 Cboe 没有正式说明，冷门标的的数据可能比整体晚一天，页面上会标“数据日”。`}ETF 列表在原来的基础上，补了 Macroption 统计的 2026 年 ETF 期权日均成交前 100 名里网站原来没有的 10 只行业、主题、商品和加密 ETF（MAGS、SILJ、AMLP、MSOS、ASHR、BNO、WEAT、GBTC、EETH、XRPC），这 10 只的中文说明是我写的，没有逐条核对。杠杆和反向类 ETF 一律不收，网站原有的 23 只（TQQQ、SQQQ、SOXL、SOXS、NVDL、TSLL、UVXY、SVXY 等）也按你的要求删掉了。</p></div>
 <div class="audit-sum"><div><b>24</b><span>处成分股归属改动</span></div><div><b>3</b><span>家已退市公司移除</span></div><div><b>1</b><span>家新上市公司补入</span></div><div><b>503</b><span>只标普500 的行业分类全部一致</span></div></div>
 
 <div class="fix"><h3>纳斯达克100：原名单停在 2026 年 2 月，10 进 10 出 <span class="tag fixd">已修正</span></h3>

@@ -7,7 +7,7 @@
   - 每只标的期权链  https://cdn.cboe.com/api/global/delayed_quotes/options/<代码>.json
 这些接口 Cboe 没有正式公开说明，格式可能随时变化。
 """
-import csv, io, json, os, re, sys, time, datetime, urllib.request, urllib.parse
+import csv, io, json, os, re, sys, time, datetime, threading, urllib.request, urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -212,9 +212,13 @@ def _yahoo_bars(sym, day):
 def _bars(sym, kind, day):
     """返回 [(美东分钟数, 价格)] 和昨收（取不到就是 None）。"""
     if kind == 2 or '.' in sym:   # 指数；以及纳斯达克查不到的 BRK.B 这类带点的代码（Cboe 的可能不是当天的，日期不对就不画）
-        j = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/charts/intraday/{"_" if kind == 2 else ""}{sym}.json', tries=3, timeout=60))
-        return [(int(b['datetime'][11:13]) * 60 + int(b['datetime'][14:16]), (b.get('price') or {}).get('close'))
-                for b in j.get('data', []) if b.get('datetime', '')[:10] == day], None
+        try:
+            j = json.loads(get(f'https://cdn.cboe.com/api/global/delayed_quotes/charts/intraday/{"_" if kind == 2 else ""}{sym}.json', tries=3, timeout=60))
+            return [(int(b['datetime'][11:13]) * 60 + int(b['datetime'][14:16]), (b.get('price') or {}).get('close'))
+                    for b in j.get('data', []) if b.get('datetime', '')[:10] == day], None
+        except Exception:
+            if kind == 2: raise        # 指数在后面统一用雅虎的指数行情补
+            return _yahoo_bars(sym, day), None
     q = urllib.parse.quote(sym.replace('.', '/'), safe='')
     d = {}
     for k in range(3):
@@ -766,10 +770,102 @@ def est_iv30(by, px, today):
         w = w * 30 / d
     return round((w / (30 / 365)) ** 0.5 * 100, 1)
 
+# ---------- 备用数据二：OCC（美国期权清算公司）官方的成交量和未平仓 ----------
+# 拿 Cboe 时期的历史核对过：OCC 当天成交量（买卖双方各记一次，所以除以 2）和 Cboe 的成交量基本一致；
+# 纳斯达克期权链的成交量和未平仓明显偏少（SPY 只有 OCC 的三分之一左右），所以 Cboe 不能用时，成交量和未平仓以 OCC 为准。
+OCC_IDX_ROOTS = {'SPX': ['SPX', 'SPXW'], 'NDX': ['NDX', 'NDXP'], 'RUT': ['RUT', 'RUTW'], 'VIX': ['VIX', 'VIXW'], 'DJX': ['DJX', 'DJXW'],
+                 'XSP': ['XSP'], 'XND': ['XND'], 'MRUT': ['MRUT'], 'OEX': ['OEX']}
+OCC = {'vol': {}, 'lock': threading.Lock()}
+
+def occ_roots(sym):
+    s = sym.lstrip('_')
+    return OCC_IDX_ROOTS.get(s, [s.replace('.', '')])
+
+def occ_volume(day):
+    """OCC 某一天全市场的期权成交量（一次下载）：{期权代码: [Call, Put]}。还没公布就是空的。"""
+    with OCC['lock']:
+        if day not in OCC['vol']:
+            out = {}
+            try:
+                t = get(f'https://marketdata.theocc.com/volume-query?reportDate={day.replace("-", "")}&format=csv&volumeQueryType=O&symbolType=ALL'
+                        f'&symbol=&reportType=D&accountType=ALL&productKind=ALL&porc=BOTH', tries=3, timeout=240).decode('utf-8', 'replace')
+                want = datetime.date.fromisoformat(day).strftime('%m/%d/%Y')
+                for r in csv.DictReader(io.StringIO(t)):
+                    if (r.get('actdate') or '').strip() != want: continue
+                    try:
+                        q = int(r['quantity'])
+                    except (TypeError, ValueError):
+                        continue
+                    out.setdefault((r.get('symbol') or '').strip(), [0, 0])[0 if r.get('porc') == 'C' else 1] += q
+            except Exception as e:
+                print('OCC 成交量取不到：', e, flush=True)
+            OCC['vol'][day] = out
+            print(f'OCC 成交量（{day}）：{len(out)} 个期权代码', flush=True)
+        return OCC['vol'][day]
+
+def occ_vol(sym, day):
+    v = occ_volume(day)
+    c = p = 0; hit = False
+    for r in occ_roots(sym):
+        if r in v:
+            hit = True; c += v[r][0]; p += v[r][1]
+    return (c // 2, p // 2) if hit else None
+
+def occ_series(sym):
+    """OCC 每个合约的未平仓：{(到期日, 行权价, 'C'/'P'): 张数}；取不到返回空。"""
+    s = sym.lstrip('_'); roots = set(occ_roots(sym))
+    try:
+        t = get(f'https://marketdata.theocc.com/series-search?symbolType=U&symbol={urllib.parse.quote(s.replace(".", ""))}', tries=2, timeout=120).decode('utf-8', 'replace')
+    except Exception:
+        return {}
+    out = {}
+    for line in t.splitlines():
+        f = line.split()
+        if len(f) < 10 or not (f[1].isdigit() and len(f[1]) == 4) or f[0] not in roots: continue
+        try:
+            ex = datetime.date(int(f[1]), int(f[2]), int(f[3])); k = float(f[4] + '.' + f[5])
+            out[(ex, k, 'C')] = int(f[-3]); out[(ex, k, 'P')] = int(f[-2])
+        except (ValueError, IndexError):
+            pass
+    return out
+
+# ---------- 备用数据三：纳斯达克也没有的（指数期权、纳斯达克临时取不到的个股）：OCC 的成交和未平仓 + 雅虎的收盘价 ----------
+# 指数期权的 IV30 用 Cboe 编的波动率指数（VIX 就是标普 500 的 30 天隐含波动率），雅虎没有罗素 2000 的 RVX，所以 RUT 系列没有 IV30。
+YQ = {'SPX': ('^GSPC', 1), 'XSP': ('^GSPC', .1), 'NDX': ('^NDX', 1), 'XND': ('^NDX', .01), 'RUT': ('^RUT', 1), 'MRUT': ('^RUT', .1),
+      'DJX': ('^DJI', .01), 'OEX': ('^OEX', 1), 'VIX': ('^VIX', 1)}
+YIV = {'SPX': '^VIX', 'XSP': '^VIX', 'OEX': '^VIX', 'NDX': '^VXN', 'XND': '^VXN', 'DJX': '^VXD', 'VIX': '^VVIX'}
+
+def _yahoo_daily(ysym):
+    j = json.loads(get(f'https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ysym)}?interval=1d&range=10d', tries=3, timeout=30))
+    r = j['chart']['result'][0]
+    off = r['meta'].get('gmtoffset', -18000)
+    return [(datetime.datetime.fromtimestamp(ts + off, datetime.timezone.utc).date().isoformat(), c)
+            for ts, c in zip(r.get('timestamp') or [], r['indicators']['quote'][0].get('close') or []) if c]
+
+def occ_chain_json(sym, today, kind):
+    s = sym.lstrip('_')
+    y, mult = YQ.get(s, (s.replace('.', '-'), 1))
+    rows = _yahoo_daily(y)
+    if len(rows) < 2: raise RuntimeError('雅虎取不到收盘价')
+    dd, px, prev = rows[-1][0], rows[-1][1] * mult, rows[-2][1] * mult
+    oi, vol = occ_series(sym), occ_vol(sym, dd)
+    if not oi and not vol: raise RuntimeError('OCC 也没有这只的期权数据')
+    iv = 0
+    if s in YIV:
+        try:
+            iv = _yahoo_daily(YIV[s])[-1][1]
+        except Exception:
+            pass
+    root = s.replace('.', '')
+    opts = [{'option': f"{root}{ex:%y%m%d}{cp}{int(round(k * 1000)):08d}", 'volume': 0, 'open_interest': n, 'bid': 0, 'ask': 0}
+            for (ex, k, cp), n in oi.items()]
+    return {'timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), '_src': 'occ', '_vol': vol or (0, 0),
+            'data': {'current_price': px, 'price_change_percent': (px / prev - 1) * 100, 'iv30': iv, 'iv30_change': 0,
+                     'last_trade_time': dd + 'T16:00:00', 'options': opts}}
+
 def nasdaq_chain_json(sym, today, kind):
     def nodata(msg):
         e = RuntimeError(msg); e.code = 404; return e
-    if sym.startswith('_'): raise nodata('纳斯达克没有指数期权')
     cls = 'etf' if kind == 1 else 'stocks'
     rows, off, last = [], 0, None
     for _ in range(12):
@@ -790,6 +886,7 @@ def nasdaq_chain_json(sym, today, kind):
         if 1001 in codes: raise nodata('纳斯达克没有这只')
         raise RuntimeError('纳斯达克暂时没有返回期权链')      # 没有 code 属性：算临时失败，最后会再重试
     root = sym.replace('.', '')
+    oi = occ_series(sym)      # 有 OCC 的未平仓就用 OCC 的（纳斯达克的偏少）
     opts, by, cur = [], {}, None
     for r in rows:
         g = r.get('expirygroup')
@@ -807,13 +904,18 @@ def nasdaq_chain_json(sym, today, kind):
             if not (bid > 0 and ask >= bid and (ask - bid) / ((ask + bid) / 2) <= 0.25):
                 bid = ask = lp if lp > 0 else 0
             opts.append({'option': f"{root}{cur:%y%m%d}{cp}{int(round(k * 1000)):08d}", 'volume': _num(r.get(pre + 'Volume')),
-                         'open_interest': _num(r.get(pre + 'Openinterest')), 'bid': bid, 'ask': ask})
+                         'open_interest': oi.get((cur, k, cp), 0) if oi else _num(r.get(pre + 'Openinterest')), 'bid': bid, 'ask': ask})
             by.setdefault(cur, {}).setdefault(k, {})[cp] = (bid, ask)
+    if oi:      # 纳斯达克链里没有、但 OCC 有未平仓的合约也补进来（只有未平仓，没有报价）
+        have = {o['option'] for o in opts}
+        for (ex, k, cp), n in oi.items():
+            code = f"{root}{ex:%y%m%d}{cp}{int(round(k * 1000)):08d}"
+            if code not in have and n: opts.append({'option': code, 'volume': 0, 'open_interest': n, 'bid': 0, 'ask': 0})
     h = _nq_closes(sym, cls, today)
     if len(h) < 2 or not h[1][1]: raise nodata('取不到收盘价')
     px = h[0][1]
     dd = datetime.date.fromisoformat(h[0][0])      # 到期天数从数据那天（最近一个收盘日）算起，周末跑也不会把 IV 算高
-    return {'timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), '_src': 'nq',
+    return {'timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), '_src': 'nq', '_vol': occ_vol(sym, h[0][0]),
             'data': {'current_price': px, 'price_change_percent': (px / h[1][1] - 1) * 100, 'iv30': est_iv30(by, px, dd), 'iv30_change': 0,
                      'last_trade_time': h[0][0] + 'T16:00:00', 'options': opts}}
 
@@ -826,8 +928,16 @@ def chain_json(sym, today, kind):
         except Exception as e:
             if getattr(e, 'code', 0) != 403: raise
             CBOE_DOWN['n'] += 1
-            if CBOE_DOWN['n'] == 5: print('Cboe 一直拒绝访问（403），这次运行改用纳斯达克期权链（IV30 为估算）', flush=True)
-    return nasdaq_chain_json(sym, today, kind)
+            if CBOE_DOWN['n'] == 5: print('Cboe 一直拒绝访问（403），这次运行改用备用数据：纳斯达克期权链 + OCC 成交量和未平仓（IV30 为估算）', flush=True)
+    if sym.startswith('_'):
+        return occ_chain_json(sym, today, kind)
+    try:
+        return nasdaq_chain_json(sym, today, kind)
+    except Exception as e:
+        try:
+            return occ_chain_json(sym, today, kind)
+        except Exception:
+            raise e
 
 def summarize(sym, today, name, earn=None, kind=0):
     j = chain_json(sym, today, kind)
@@ -846,6 +956,7 @@ def summarize(sym, today, name, earn=None, kind=0):
         if cp == 'C': cv += v; coi += oi
         else: pv += v; poi += oi
         exps.setdefault(ymd, []).append((float(k) / 1000, cp, o.get('bid') or 0, o.get('ask') or 0, v, oi))
+    if j.get('_vol'): cv, pv = j['_vol']      # OCC 官方成交量
     key = lambda x: x.strftime('%y%m%d')
     dates = sorted(datetime.date(2000 + int(x[:2]), int(x[2:4]), int(x[4:])) for x in exps)
     dates = [x for x in dates if x >= today]
@@ -874,6 +985,9 @@ def summarize(sym, today, name, earn=None, kind=0):
             k, cp, b, a = min(legs, key=lambda l: abs(l[0] - px))[:4]
             spread = round((a - b) / ((a + b) / 2) * 100, 1)
         em = straddle(x)
+        if em is None and j.get('_src') == 'occ' and px and d.get('iv30'):      # 没有期权报价时，用 IV30 换算跨式价（≈ 0.8 × 波动率 × 股价 × √年数）
+            s_ = 0.7979 * d['iv30'] / 100 * px * ((x - today).days / 365) ** 0.5
+            em = [x.isoformat(), round(s_, 2), round(s_ / px * 100, 1)]
         break
     # 财报后第一个到期日的预期波动（盘后公布的要再往后一天）
     eem = None
@@ -924,6 +1038,9 @@ def main():
     t0 = time.time()
     if '--premarket' in sys.argv:    # 只抓盘前行情（--force 不看时间，测试用）
         premarket_scan('--force' in sys.argv, limit)
+        return
+    if '--occ-patch' in sys.argv:    # 用 OCC 公布的成交量补上（完整更新时 OCC 还没公布的情况）
+        occ_patch()
         return
     if '--ipo-only' in sys.argv:    # 只更新新股 IPO 数据
         ipo_scan()
@@ -983,6 +1100,19 @@ def main():
             except Exception:
                 pass
 
+    # 所有数据源都取不到的：沿用上一次网站上的数据（网页会标出数据停在哪天），超过 5 天的不再沿用
+    if fail:
+        try:
+            prev = json.load(open(os.path.join(DATA, 'prev_news.json'))).get('data') or {}
+        except Exception:
+            prev = {}
+        kept = [s for s in fail if s in prev and (today - datetime.date.fromisoformat((prev[s].get('last') or '2000-01-01')[:10])).days <= 5]
+        for s in kept:
+            res[s] = dict(prev[s], src='prev')
+        fail = [s for s in fail if s not in kept]
+        if kept: print(f'沿用上一次数据 {len(kept)} 只：{" ".join(kept)}', flush=True)
+        if fail: print(f'仍然没有数据 {len(fail)} 只：{" ".join(fail)}', flush=True)
+
     # 期权数据取不够（Cboe 和备用都不行）：这次不更新期权数据、沿用上一次的，小盘股等其他数据照常更新
     need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
     if need and len(res) < need:
@@ -1033,8 +1163,10 @@ def main():
     else:
         print('新闻 0 组', flush=True)
     print(f'市值 {len(mcap)} 只（{mcap_src}）', flush=True)
-    est = sum(1 for r in res.values() if r.get('src') == 'nq') > len(res) / 2     # 大部分来自纳斯达克备用，IV30 是估算的
-    out = {'source': 'Nasdaq option chain (IV30 estimated)' if est else 'Cboe delayed quotes', 'iv_est': est, 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
+    est = sum(1 for r in res.values() if r.get('src') in ('nq', 'occ')) > len(res) / 2     # 大部分来自备用数据，IV30 是估算的
+    # OCC 当天的成交量可能还没公布：先用纳斯达克的，标记出来，之后的定时任务会用 OCC 的补上（--occ-patch）
+    pending = bool(est and not occ_volume(day))
+    out = {'source': 'Nasdaq option chain + OCC volume/OI (IV30 estimated)' if est else 'Cboe delayed quotes', 'iv_est': est, 'occ_pending': pending, 'fetched': datetime.datetime.now().isoformat(timespec='seconds'),
            'timestamp': ts, 'date': day, 'n': len(res), 'failed': fail, 'data': res,
            'mcap': mcap, 'mcap_source': mcap_src,
            'earn': {t: v for t, v in earn.items() if t in res}, 'news': nw}
@@ -1057,6 +1189,28 @@ def main():
     need = int(sys.argv[sys.argv.index('--min') + 1]) if '--min' in sys.argv else 0
     if len(res) < need:
         sys.exit(f'只抓到 {len(res)} 只，少于 {need} 只，这次不更新网页')
+
+def occ_patch():
+    p = os.path.join(DATA, 'options_latest.json')
+    L = json.load(open(p))
+    if not L.get('occ_pending'):
+        print('期权成交量不需要补', flush=True); return
+    day = L['date']
+    if not occ_volume(day):
+        print(f'OCC 还没有公布 {day} 的成交量，下次再补', flush=True); return
+    n = 0
+    for s, r in L['data'].items():
+        if r.get('src') not in ('nq', 'occ'): continue
+        x = occ_vol(('_' + s) if r.get('k') == 2 else s, day)
+        if x:
+            r['cv'], r['pv'] = x; n += 1
+    L['occ_pending'] = False
+    json.dump(L, open(p, 'w'), separators=(',', ':'))
+    print(f'已用 OCC 成交量补上 {n} 只（{day}）', flush=True)
+    try:
+        update_history(day, {s: r for s, r in L['data'].items() if r.get('src') in ('nq', 'occ')})
+    except Exception as e:
+        print('走势记录没更新：', e, flush=True)
 
 def update_history(day, res, keep=60):
     """每天记一笔期权成交量和 IV30，存在 data/hist.json，最多留 keep 个交易日，网页用来画走势小图。"""

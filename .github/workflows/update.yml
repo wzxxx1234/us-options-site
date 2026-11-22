@@ -21,7 +21,7 @@ on:
       mode:
         description: 'full 全量抓取 / rebuild 只重新生成网页 / quick 只抓 60 只测试 / pre 盘前更新（小盘股盘前行情） / auto 完整更新，但网站数据 10 小时内更新过就跳过（Cloudflare 定时触发用这个）'
         type: choice
-        options: [full, rebuild, quick, auto, pre]
+        options: [full, rebuild, quick, auto, pre, occ]
         default: full
 
 permissions:
@@ -42,13 +42,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       go: ${{ steps.c.outputs.go }}
+      mode: ${{ steps.c.outputs.mode }}
     steps:
       - id: c
         run: |
           if [ "${{ github.event_name }}" != "schedule" ] && [ "${{ inputs.mode }}" != "auto" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
-          h=$(curl -fsSL "$PAGES_URL/options_latest.json" | python3 -c 'import json,sys,datetime as D;d=json.load(sys.stdin);t=D.datetime.fromisoformat(d["fetched"][:19]);print(int((D.datetime.utcnow()-t).total_seconds()//3600))' || echo 99)
+          read h pend < <(curl -fsSL "$PAGES_URL/options_latest.json" | python3 -c 'import json,sys,datetime as D;d=json.load(sys.stdin);t=D.datetime.fromisoformat(d["fetched"][:19]);print(int((D.datetime.utcnow()-t).total_seconds()//3600),1 if d.get("occ_pending") else 0)' || echo 99 0)
           echo "网站上的数据是 $h 小时前抓的"
-          if [ "$h" -lt 10 ]; then echo "已经更新过，这次跳过"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
+          if [ "$h" -lt 10 ] && [ "$pend" = "1" ]; then echo "已经更新过，但 OCC 成交量还没补上：只补成交量"; echo "go=1" >> "$GITHUB_OUTPUT"; echo "mode=occ" >> "$GITHUB_OUTPUT"
+          elif [ "$h" -lt 10 ]; then echo "已经更新过，这次跳过"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
 
   build:
     needs: check
@@ -56,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      MODE: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[完整更新]') && 'full' || 'rebuild') || github.event_name == 'schedule' && 'full' || (inputs.mode == 'auto' && 'full' || inputs.mode) }}
+      MODE: ${{ needs.check.outputs.mode || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[完整更新]') && 'full' || 'rebuild') || github.event_name == 'schedule' && 'full' || (inputs.mode == 'auto' && 'full' || inputs.mode)) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -69,7 +71,7 @@ jobs:
           [ -f src/data/hist.json ] || curl -fsSL "$PAGES_URL/hist.json" -o src/data/hist.json || true
       - name: 准备期权数据（模式：${{ env.MODE }}）
         run: |
-          if [ "$MODE" = "rebuild" ] || [ "$MODE" = "pre" ]; then
+          if [ "$MODE" = "rebuild" ] || [ "$MODE" = "pre" ] || [ "$MODE" = "occ" ]; then
             # 仓库里的数据和网站上的，哪份新用哪份
             mkdir -p /tmp/site
             curl -fsSL "$PAGES_URL/options_latest.json" -o /tmp/site/options_latest.json || true
@@ -82,6 +84,8 @@ jobs:
             [ -f src/data/options_latest.json ] || python3 src/fetch_cboe.py --min 700
             # 盘前更新：抓小盘股的盘前行情（取不到也不影响其他数据）
             if [ "$MODE" = "pre" ]; then python3 src/fetch_cboe.py --premarket || echo "盘前数据没取到"; fi
+            # 完整更新时 OCC 还没公布当天成交量的，盘前和补数任务里用 OCC 的补上
+            if [ "$MODE" = "pre" ] || [ "$MODE" = "occ" ]; then python3 src/fetch_cboe.py --occ-patch || echo "OCC 成交量没补上"; fi
             # 盘前顺便刷新新股 IPO 日历（当天要上市的新股常常前一晚才定价）
             if [ "$MODE" = "pre" ]; then python3 src/fetch_cboe.py --ipo-only || echo "IPO 数据没取到"; fi
           elif [ "$MODE" = "quick" ]; then
@@ -92,7 +96,7 @@ jobs:
             python3 src/fetch_cboe.py --min 700
           fi
       - name: 把最新数据存回仓库
-        if: env.MODE == 'full'
+        if: env.MODE == 'full' || env.MODE == 'occ'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

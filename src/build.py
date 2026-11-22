@@ -127,7 +127,7 @@ for r in _ipo:
     if r['s'] in O and not O[r['s']][7]: O[r['s']][7]=r['n']
     if r.get('pd','')>=(datetime.date.today()-datetime.timedelta(days=365)).isoformat(): IPN[r['s']]=[r['pd'],r.get('ip') or 0]
 print('ipo',len(IPN),'with options',sum(1 for t in IPN if t in O))
-data=json.dumps({'IPN':IPN,'S':SECT,'C':C,'I':I,'E':E,'O':O,'EC':EC,'OD':{'date':OD,'ts':OTS,'n':len(O),'est':1 if L.get('iv_est') else 0},'N':L.get('news') or {}},ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
+data=json.dumps({'IPN':IPN,'S':SECT,'C':C,'I':I,'E':E,'O':O,'EC':EC,'OD':{'date':OD,'ts':OTS,'n':len(O),'est':1 if L.get('iv_est') else 0,'occp':1 if L.get('occ_pending') else 0},'N':L.get('news') or {}},ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
 t=open('template.html').read().replace('/*__DATA__*/',data).replace('（Cboe 时间戳）','（美东时间，最后一笔成交）')
 os.makedirs('dist',exist_ok=True)
 open('dist/美股选股手册.html','w').write(t)
