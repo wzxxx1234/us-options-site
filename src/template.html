@@ -1701,12 +1701,12 @@ function openSmall(t){const d0=SM.s[t];if(!d0)return;const d=$('#drawer');if(!d.
   <div class="smrange"><span>52 周低 $${d0.l}</span>${smBar(d0)}<span>52 周高 $${d0.h}</span></div>
   <div class="d-h">交易数据<small>纳斯达克 · FINRA</small></div><div class="obox">${cell(d0.rv.toFixed(1)+'×','成交量比（今天 ÷ 30 日平均）')}${cell(smDV(d0.dv),'日成交额')}${cell(fmtCap(d0.mc),'市值')}${cell(fmtN(d0.av),'30 日平均成交量（股）')}${cell(d0.atr+'%','日波动（近 14 天平均）')}${cell((d0.gap>0?'+':'')+d0.gap+'%','今天开盘跳空')}${cell((d0.r5>0?'+':'')+d0.r5+'%','近 5 日涨跌')}${cell((d0.r20>0?'+':'')+d0.r20+'%','近 20 日涨跌')}${cell((d0.st>0?'连涨 ':'连跌 ')+Math.abs(d0.st)+' 天','连续涨跌')}${cell(d0.sip!=null?d0.sip+'%':'—','做空占总股本'+(d0.sd?'（'+md(d0.sd)+'）':''))}${cell(d0.dtc!=null?d0.dtc+' 天':'—','回补天数')}${cell(d0.sv!=null?d0.sv+'%':'—','卖空成交占比（FINRA）')}</div>
   <div class="d-h">要注意的</div><ul class="smrisk">${risk.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
-  <div class="d-h">相关新闻<small>雅虎财经${nw&&nw.length?'（英文标题）':''}</small></div>${nw&&nw.length?`<ul class="news">${nw.map(x=>newsLi(x)).join('')}</ul>`:'<p class="d-sm">这只今天不在异动名单里，没有抓新闻。点下面的链接去看。</p>'}
+  <div class="d-h">相关新闻<small data-live-src>雅虎财经 · 每日收盘后</small></div><div data-live-news="${esc(t)}">${nw&&nw.length?`<ul class="news">${nw.map(x=>newsLi(x)).join('')}</ul>`:'<p class="d-sm">正在取最新新闻…</p>'}</div>
   <div class="d-h">仓位试算</div>${posHTML(false)}
   <div class="d-h">查资料</div><div class="d-links">${SMP.p[t]&&SMP.p[t].url?`<a href="${esc(SMP.p[t].url)}" target="_blank" rel="noopener">公司官网 ↗</a>`:''}<a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${y}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">SEC 公告 ↗</a><a href="https://www.nasdaq.com/market-activity/stocks/${t.toLowerCase()}/insider-activity" target="_blank" rel="noopener">内部人买卖 ↗</a><a href="https://www.nasdaq.com/market-activity/stocks/${t.toLowerCase()}/short-interest" target="_blank" rel="noopener">做空数据 ↗</a><a href="https://www.nasdaq.com/market-activity/stocks/${t.toLowerCase()}/institutional-holdings" target="_blank" rel="noopener">机构持仓 ↗</a><a href="https://finviz.com/quote.ashx?t=${y}" target="_blank" rel="noopener">Finviz ↗</a><a href="https://finance.yahoo.com/quote/${y}" target="_blank" rel="noopener">Yahoo Finance ↗</a><a href="https://www.tradingview.com/symbols/${y}/" target="_blank" rel="noopener">TradingView ↗</a><a href="https://finance.yahoo.com/calendar/earnings?symbol=${y}" target="_blank" rel="noopener">财报日期 ↗</a></div>
   ${smRelHTML(t,d0)}
   <p class="d-sm">价格、成交来自纳斯达克收盘数据；做空占比用最近一期做空持仓估算（总股本按市值÷股价算，不是流通股）。数据不是实时的，不构成投资建议。</p></div>`;
-  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');trNews(d);posInit(d.querySelector('.pos'),{p:d0.p,atr:d0.atr,dv:d0.dv});smDescTr(d,t);$('#d-x').focus({preventScroll:true})}
+  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');trNews(d);liveNews(d);posInit(d.querySelector('.pos'),{p:d0.p,atr:d0.atr,dv:d0.dv});smDescTr(d,t);$('#d-x').focus({preventScroll:true})}
 function stepSmall(n){const p=SMRES.indexOf(smCur);if(p<0)return;const t=SMRES[p+n];if(t!=null)openSmall(t)}
 $('#main').addEventListener('click',e=>{if(st.view!=='small'&&st.view!=='watch')return;const T=e.target;let b;
   if(b=T.closest('[data-sq]')){st.sq=st.sq===b.dataset.sq?'':b.dataset.sq;st.sshown=60;render();return}
@@ -2010,7 +2010,7 @@ function openDrawer(i){dmode='';const c=C[i],d=$('#drawer');if(!d.classList.cont
   <div class="d-h">查资料</div><div class="d-links"><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(c[0])}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">SEC 公告 ↗</a><a href="https://www.nasdaq.com/market-activity/stocks/${encodeURIComponent(y.toLowerCase())}/insider-activity" target="_blank" rel="noopener">内部人买卖 ↗</a><a href="https://www.nasdaq.com/market-activity/stocks/${encodeURIComponent(y.toLowerCase())}/short-interest" target="_blank" rel="noopener">做空数据 ↗</a><a href="https://finviz.com/quote.ashx?t=${encodeURIComponent(c[0])}" target="_blank" rel="noopener">Finviz ↗</a></div>
   ${etfs.length?`<div class="d-h">持有它的常见 ETF</div><div class="d-rel">${etfs.map(([t,l])=>`<button class="pill" data-etf="${t}"><b>${t}</b>${l}</button>`).join('')}</div><p class="d-sm">按指数和板块归属推断，具体权重请到发行方网站查看。</p>`:''}
   <div class="d-h">同行业的公司</div><div class="d-rel">${rel.map(j=>`<button class="pill" data-i="${j}"><b>${esc(C[j][0])}</b>${esc(C[j][1])}</button>`).join('')}</div></div>`;
-  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');trNews(d);
+  d.scrollTop=0;d.classList.add('on');$('#scrim').classList.add('on');trNews(d);liveNews(d);
   if(hot)hot.classList.remove('hot');hot=tiles[i]||null;if(hot)hot.classList.add('hot');
   $('#d-x').focus({preventScroll:true})}
 function stepDrawer(n){if(dmode==='small')return stepSmall(n);if(dmode==='ipo')return stepIpo(n);const p=RES.indexOf(cur);if(p<0)return;const t=RES[p+n];if(t!=null)openDrawer(t)}
@@ -2212,8 +2212,8 @@ async function trNews(root){const lis=[...root.querySelectorAll('.news li[data-t
   if(st==='need'){mk('<button class="trbtn" type="button">翻译成中文</button><span>浏览器第一次翻译要下载语言包（只下载一次），之后自动翻译</span>');
     bar.querySelector('button').onclick=async()=>{mk('<span>正在准备翻译，第一次要等一会儿…</span>');await run()};return}
   mk('<span>这几条是英文标题。用最新版 Chrome 或 Edge 打开，可以自动翻成中文</span>')}
-function newsHTML(t){const L=NEWS[t];if(!L||!L.length)return'';
-  return `<div class="d-h">相关新闻<small>雅虎财经${L.some(x=>x[3])?'，中文是机器翻译，点开是英文原文':'，英文标题'}</small></div><ul class="news">${L.map(newsLi).join('')}</ul>`}
+function newsHTML(t){const L=NEWS[t]||[];if(IXN[t])return'';
+  return `<div class="d-h">相关新闻<small data-live-src>雅虎财经 · 每日收盘后${L.some(x=>x[3])?'，中文是机器翻译':''}</small></div><div data-live-news="${esc(t)}">${L.length?`<ul class="news">${L.map(newsLi).join('')}</ul>`:'<p class="d-sm">正在取最新新闻…</p>'}</div>`}
 function renderFocus(){const el=$('#focus');if(!el)return;
   const er=C.map((c,i)=>[i,earnOf(c[0])]).filter(([i,e])=>e&&dayDiff(etToday,e[0])>=0&&dayDiff(etToday,e[0])<=7);
   const erTop=er.slice().sort((a,b)=>(C[b[0]][8]||0)-(C[a[0]][8]||0)).slice(0,7).sort((a,b)=>a[1][0]<b[1][0]?-1:a[1][0]>b[1][0]?1:(a[1][1]==='pre'?0:1)-(b[1][1]==='pre'?0:1));
@@ -2227,7 +2227,7 @@ function renderFocus(){const el=$('#focus');if(!el)return;
   const earnCard=`<div class="fcard f-earn"><h3><em>01</em>本周财报<small>未来 7 天 ${er.length} 家</small></h3>${lead}${erTop.length?`<ul>${erTop.filter(x=>!ld||x[0]!==ld[0]).map(([i,e])=>{const c=C[i],o=O[c[0]],n=dayDiff(etToday,e[0]);return `<li><span class="fd${n<=1?' hot':''}">${n===0?'今天':n===1?'明天':md(e[0])+' '+wkd(e[0])}<small>${e[1]==='pre'?'盘前':e[1]==='post'?'盘后':''}</small></span>${tkBtn(c[0])}<span class="fn">${esc(c[1])}</span><span class="fv">${o&&o[18]?'±'+o[18][2]+'%':''}</span></li>`}).join('')}</ul><button class="fmore" data-go="earn">看全部 ${er.length} 家 →</button>`:'<p class="fe">财报日历下一次自动更新后显示。</p>'}</div>`;
   const calCard=`<div class="fcard f-cal"><h3><em>03</em>重要日程<small>未来 14 天</small></h3>${ev.length?`<ul>${ev.map(([d,k,t,c])=>{const n=dayDiff(etToday,d);return `<li><span class="fd${n<=1?' hot':''}">${n===0?'今天':n===1?'明天':md(d)+' '+wkd(d)}</span><span class="fk ${c}">${k}</span></li>`}).join('')}</ul>`:'<p class="fe">未来 14 天没有休市、议息、CPI、非农或月度到期。</p>'}<button class="fmore" data-go="cal">看完整日历 →</button></div>`;
   const unuCard=`<div class="fcard f-unu"><h3><em>02</em>期权异动<small>${ODATE}</small></h3>${un.length?`<ul>${un.map(([t,o])=>{const u=o[21];return `<li>${tkBtn(t)}<span class="fn">${md(u[0])} $${u[2]} ${u[1]==='C'?'Call':'Put'}</span><span class="fv">${fmtN(u[3])} 张</span></li>`}).join('')}</ul><button class="fmore" data-go="unu">看全部异动 →</button>`:'<p class="fe">异动数据下一次自动更新后显示。</p>'}</div>`;
-  const newsCard=`<div class="fcard f-news"><h3><em>04</em>市场新闻<small>${mk.length&&/[\u4e00-\u9fff]/.test(mk[0][0])?'新浪财经':'雅虎财经'}</small></h3>${mk.length?`<ul class="fnews">${mk.map(newsLi).join('')}</ul>`:'<p class="fe">新闻下一次自动更新后显示。</p>'}</div>`;
+  const newsCard=`<div class="fcard f-news"><h3><em>04</em>市场新闻<small id="fnews-src">${mk.length&&/[\u4e00-\u9fff]/.test(mk[0][0])?'新浪财经':'雅虎财经'} · 每日收盘后</small></h3><div id="fnews-box">${mk.length?`<ul class="fnews">${mk.map(newsLi).join('')}</ul>`:'<p class="fe">正在取最新快讯…</p>'}</div></div>`;
   el.innerHTML=`<div class="focus-h"><b>今日看点</b><span>美东 ${ODATE} 收盘后的数据</span></div><div class="fgrid fx">${earnCard}${unuCard}${calCard}${newsCard}</div>`}
 $('#focus').addEventListener('click',e=>{const T=e.target;let b;
   if(selecting()&&!T.closest('button,a'))return;
@@ -2506,7 +2506,20 @@ const AUDIT=`<div class="prose">
 </div>`;
 
 for(const k of urlKeys())DEF[k]=st[k];
-layoutMap();paintLegend();dataAlert();renderFocus();countUp();
+/* ---- 实时新闻：由 Cloudflare Worker 代取（雅虎个股新闻缓存 5 分钟、新浪快讯缓存 1 分钟）；取不到就保留每天收盘后抓的那份 ---- */
+const NAPI='https://us-options-trigger.zexin2314.workers.dev';
+async function napi(path){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);try{const r=await fetch(NAPI+path,{signal:ac.signal});if(!r.ok)return null;const j=await r.json();return Array.isArray(j)?j:null}catch(e){return null}finally{clearTimeout(to)}}
+async function liveNews(root){const box=root.querySelector('[data-live-news]');if(!box)return;const t=box.dataset.liveNews,L=await napi('/news?s='+encodeURIComponent(t));
+  if(!box.isConnected)return;const src=root.querySelector('[data-live-src]');
+  if(L&&L.length){box.innerHTML=`<ul class="news">${L.slice(0,6).map(newsLi).join('')}</ul>`;if(src)src.textContent='雅虎财经 · 实时';trNews(root)}
+  else if(!box.querySelector('li'))box.innerHTML='<p class="d-sm">暂时没有取到这只的新闻，点下面的链接去看。</p>'}
+let mktSeen=null;
+async function liveMkt(){const box=$('#fnews-box');if(!box||document.hidden)return;const L=await napi('/mkt');if(!L||!L.length||!box.isConnected)return;
+  const top=L.slice(0,5),fresh=mktSeen?top.filter(x=>!mktSeen.has(x[1]+x[0])):[];mktSeen=new Set(L.map(x=>x[1]+x[0]));
+  box.innerHTML=`<ul class="fnews">${top.map(newsLi).join('')}</ul>`;const s=$('#fnews-src');if(s)s.textContent='新浪财经 7×24 · 实时';
+  if(fresh.length){const keys=new Set(fresh.map(x=>x[0]));box.querySelectorAll('li').forEach(li=>{const a=li.querySelector('a');if(a&&keys.has(a.textContent))flash(li,true)})}}
+setInterval(liveMkt,90000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)liveMkt()});
+layoutMap();paintLegend();dataAlert();renderFocus();countUp();liveMkt();
 if(intro())setTimeout(()=>document.documentElement.classList.remove('intro'),MS('--t-slow')*3);
 setView(readURL(),true);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moveInd);
