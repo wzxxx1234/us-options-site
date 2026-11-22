@@ -243,8 +243,8 @@ def _pack(bars, prev, px):
     pts = [None] * 79
     last = -1
     for m, c in bars:
-        if not c or not 570 < m <= 960: continue   # 只要正常交易时段
-        i = min((m - 571) // 5, 77)
+        if not c or not 570 <= m <= 960: continue   # 只要正常交易时段（含 9:30 开盘）
+        i = min((m - 570) // 5, 77)
         pts[i] = c; last = max(last, i)
     if last < 6 or not prev: return None
     pts[last + 1] = px or pts[last]   # 收盘价接在最后（提前收盘的日子就在中间结束）
@@ -308,7 +308,7 @@ def intraday(res, day):
             fails.append(k)
         time.sleep(0.5)
     if fails: print(f'分时取不到 {len(fails)} 只：{" ".join(sorted(fails)[:40])}', flush=True)
-    json.dump({'d': day, 's': out}, open(os.path.join(DATA, 'intraday.json'), 'w'), separators=(',', ':'))
+    json.dump({'d': day, 's': out}, open(os.path.join(DATA, 'intraday.json'), 'w'), separators=(',', ':'))  # noqa: SIM115
     print(f'分时走势 {len(out)} 只，用时 {time.time() - t0:.0f}s', flush=True)
 
 # ---------- 小盘正股池：每天从全市场里筛出“小盘 + 有流动性”的股票，算好指标，存成 data/small.json ----------
