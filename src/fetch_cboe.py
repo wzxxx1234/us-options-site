@@ -388,6 +388,13 @@ def _hist(sym, day):
         except Exception:
             pass
     out.sort(reverse=True)    # 新的在前
+    if not out or out[0][0] < day:
+        try:
+            top = out[0][0] if out else ''
+            add = [x for x in _yahoo_ohlc(sym.replace('.', '-'), '5d') if top < x[0] <= day]
+            out = sorted(add, reverse=True) + out
+        except Exception:
+            pass
     return out
 
 def _metrics(h):
@@ -835,12 +842,27 @@ YQ = {'SPX': ('^GSPC', 1), 'XSP': ('^GSPC', .1), 'NDX': ('^NDX', 1), 'XND': ('^N
       'DJX': ('^DJI', .01), 'OEX': ('^OEX', 1), 'VIX': ('^VIX', 1)}
 YIV = {'SPX': '^VIX', 'XSP': '^VIX', 'OEX': '^VIX', 'NDX': '^VXN', 'XND': '^VXN', 'DJX': '^VXD', 'VIX': '^VVIX'}
 
-def _yahoo_daily(ysym):
-    j = json.loads(get(f'https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ysym)}?interval=1d&range=10d', tries=3, timeout=30))
+def _yahoo_ohlc(ysym, rng='10d'):
+    """雅虎日线，旧的在前：(日期, 开, 高, 低, 收, 量)。
+    收盘后几个小时里，当天那根日线的收盘价是空的（纳斯达克的历史行情更晚才有当天），这时用行情里的最新价补上。"""
+    j = json.loads(get(f'https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ysym)}?interval=1d&range={rng}', tries=3, timeout=30))
     r = j['chart']['result'][0]
-    off = r['meta'].get('gmtoffset', -18000)
-    return [(datetime.datetime.fromtimestamp(ts + off, datetime.timezone.utc).date().isoformat(), c)
-            for ts, c in zip(r.get('timestamp') or [], r['indicators']['quote'][0].get('close') or []) if c]
+    m = r['meta']; off = m.get('gmtoffset', -18000)
+    day = lambda ts: datetime.datetime.fromtimestamp(ts + off, datetime.timezone.utc).date().isoformat()
+    q = r['indicators']['quote'][0]; ts = r.get('timestamp') or []
+    col = lambda k: (q.get(k) or [None] * len(ts)) + [None] * len(ts)
+    o, h, l, c, v = col('open'), col('high'), col('low'), col('close'), col('volume')
+    out = []
+    for i, x in enumerate(ts):
+        ci = c[i]
+        if ci is None and i == len(ts) - 1 and m.get('regularMarketTime') and day(m['regularMarketTime']) == day(x):
+            ci = m.get('regularMarketPrice')
+        if ci:
+            out.append((day(x), o[i] or ci, h[i] or m.get('regularMarketDayHigh') or ci, l[i] or m.get('regularMarketDayLow') or ci, ci, v[i] or 0))
+    return out
+
+def _yahoo_daily(ysym):
+    return [(x[0], x[4]) for x in _yahoo_ohlc(ysym)]
 
 def occ_chain_json(sym, today, kind):
     s = sym.lstrip('_')
@@ -911,7 +933,16 @@ def nasdaq_chain_json(sym, today, kind):
         for (ex, k, cp), n in oi.items():
             code = f"{root}{ex:%y%m%d}{cp}{int(round(k * 1000)):08d}"
             if code not in have and n: opts.append({'option': code, 'volume': 0, 'open_interest': n, 'bid': 0, 'ask': 0})
-    h = _nq_closes(sym, cls, today)
+    h = []
+    try:
+        h = [x for x in reversed(_yahoo_daily(sym.replace('.', '-')))]
+    except Exception:
+        pass
+    try:
+        n = _nq_closes(sym, cls, today)
+        if n and (not h or n[0][0] > h[0][0]): h = n
+    except Exception:
+        if not h: raise
     if len(h) < 2 or not h[1][1]: raise nodata('取不到收盘价')
     px = h[0][1]
     dd = datetime.date.fromisoformat(h[0][0])      # 到期天数从数据那天（最近一个收盘日）算起，周末跑也不会把 IV 算高
