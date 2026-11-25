@@ -47,10 +47,21 @@ jobs:
       - id: c
         run: |
           if [ "${{ github.event_name }}" != "schedule" ] && [ "${{ inputs.mode }}" != "auto" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
-          read h pend < <(curl -fsSL "$PAGES_URL/options_latest.json" | python3 -c 'import json,sys,datetime as D;d=json.load(sys.stdin);t=D.datetime.fromisoformat(d["fetched"][:19]);print(int((D.datetime.utcnow()-t).total_seconds()//3600),1 if d.get("occ_pending") else 0)' || echo 99 0)
-          echo "网站上的数据是 $h 小时前抓的"
-          if [ "$h" -lt 10 ] && [ "$pend" = "1" ]; then echo "已经更新过，但 OCC 成交量还没补上：只补成交量"; echo "go=1" >> "$GITHUB_OUTPUT"; echo "mode=occ" >> "$GITHUB_OUTPUT"
-          elif [ "$h" -lt 10 ]; then echo "已经更新过，这次跳过"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
+          # 判断是不是“最近一次收盘之后已经完整抓过”：看数据日期和抓取时间，不看隔了几小时
+          # （盘前更新也会刷新抓取时间，只看小时数会把收盘后的那次误跳过）
+          read done pend < <(curl -fsSL "$PAGES_URL/options_latest.json" | python3 -c '
+          import json,sys,datetime as D
+          from zoneinfo import ZoneInfo
+          d=json.load(sys.stdin); et=ZoneInfo("America/New_York"); now=D.datetime.now(et)
+          c=now.replace(hour=16,minute=15,second=0,microsecond=0)      # 最近一次收盘（含 15 分钟余量）
+          if now<c: c-=D.timedelta(days=1)
+          while c.weekday()>=5: c-=D.timedelta(days=1)
+          f=D.datetime.fromisoformat(d["fetched"][:19]).replace(tzinfo=D.timezone.utc)   # GitHub 上 fetched 是 UTC
+          ok=d.get("date","")>=c.date().isoformat() or f>=c                            # 已有那天的数据，或收盘后抓过（节假日没有新数据）
+          print(1 if ok else 0, 1 if d.get("occ_pending") else 0)' || echo 0 0)
+          echo "最近一次收盘后是否已完整更新：$done，OCC 成交量待补：$pend"
+          if [ "$done" = "1" ] && [ "$pend" = "1" ]; then echo "已经更新过，但 OCC 成交量还没补上：只补成交量"; echo "go=1" >> "$GITHUB_OUTPUT"; echo "mode=occ" >> "$GITHUB_OUTPUT"
+          elif [ "$done" = "1" ]; then echo "已经更新过，这次跳过"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
 
   build:
     needs: check
